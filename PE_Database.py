@@ -1,5 +1,15 @@
 import pyodbc
 
+def connectWithDatabase():
+    connPESensorsDatabase = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server};'
+                                           'Server=WPLSXSQL1;'
+                                           'Database=sensmandb;'
+                                           'uid=admuser;pwd=admu$er;'
+                                           )
+    return connPESensorsDatabase.cursor()
+
+import pyodbc
+
 
 def getInventoryNumber(inventoryNumber, cursor):
     cursor.execute("SELECT nr_zd FROM Baza_czujniki WHERE nr_zd = '" + inventoryNumber + "'")
@@ -101,6 +111,12 @@ def getUnitMeasSignal(inventoryNumber, cursor):
         return ''
     else:
         return unitMeasSignal
+
+
+#def addNewSensor(cursor, inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate, status, minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal, unitMeasSignal, type):
+#    query = "INSERT INTO Baza_czujniki (nr_zd, k_modelu, n_seryjny, prod, okres_k, kolejna_k, status, syg_ana_min, syg_ana_max, jednostka_ana, syg_mierz_min, syg_mierz_max, jednostka_mierz, typ_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+#    cursor.execute(query, (inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate, status, minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal, unitMeasSignal, type))
+#    cursor.commit()
 
 
 

@@ -3,28 +3,28 @@
 import pyodbc
 import os
 
-from Sensor import *
-from Database import *
+import PE_Database as PE
+import MP2_Database as MP2
 
 
 sensorInventoryNumber = 'ZD3331'
+cursorPE = PE.connectWithDatabase()
 pathToLabel = "//wplcswroclaw12m/pdp/01_Team's/TQC_MTS/Kalibracje/FAQ/Program kalibracyjny/"
 
-
-sensor = {'inventoryNumber': getInventoryNumber(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'type': getType(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'model': getModel(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'serialNumber': getSerialNumber(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'producent': getProducent(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'calibrationPeriod': getCalibrationPeriod(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'calibrationDate': getCalibrationDate(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'status': getStatus(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'minAnalogSignal': getMinAnalogSignal(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'maxAnalogSignal': getMaxAnalogSignal(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'unitAnalogSignal': getUnitAnalogSignal(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'minMeasSignal': getMinMeasSignal(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'maxMeasSignal': getMaxMeasSignal(sensorInventoryNumber, connectWithPESensorsDatabase()),
-          'unitMeasSignal': getUnitMeasSignal(sensorInventoryNumber, connectWithPESensorsDatabase())
+sensor = {'inventoryNumber': PE.getInventoryNumber(sensorInventoryNumber, cursorPE),
+          'type': PE.getType(sensorInventoryNumber, cursorPE),
+          'model': PE.getModel(sensorInventoryNumber, cursorPE),
+          'serialNumber': PE.getSerialNumber(sensorInventoryNumber, cursorPE),
+          'producent': PE.getProducent(sensorInventoryNumber, cursorPE),
+          'calibrationPeriod': PE.getCalibrationPeriod(sensorInventoryNumber, cursorPE),
+          'calibrationDate': PE.getCalibrationDate(sensorInventoryNumber, cursorPE),
+          'status': PE.getStatus(sensorInventoryNumber, cursorPE),
+          'minAnalogSignal': PE.getMinAnalogSignal(sensorInventoryNumber, cursorPE),
+          'maxAnalogSignal': PE.getMaxAnalogSignal(sensorInventoryNumber, cursorPE),
+          'unitAnalogSignal': PE.getUnitAnalogSignal(sensorInventoryNumber, cursorPE),
+          'minMeasSignal': PE.getMinMeasSignal(sensorInventoryNumber, cursorPE),
+          'maxMeasSignal': PE.getMaxMeasSignal(sensorInventoryNumber, cursorPE),
+          'unitMeasSignal': PE.getUnitMeasSignal(sensorInventoryNumber, cursorPE)
           }
 
 
