@@ -7,7 +7,7 @@ import PE_Database as PE
 import MP2_Database as MP2
 
 
-sensorInventoryNumber = 'ZD3331'
+sensorInventoryNumber = 'ZD7081'
 cursorPE = PE.connectWithDatabase()
 pathToLabel = "//wplcswroclaw12m/pdp/01_Team's/TQC_MTS/Kalibracje/FAQ/Program kalibracyjny/"
 
@@ -54,148 +54,217 @@ def openLabelSheme(path):
 
 
 def replaceInventoryNumber(label):
-    return label.replace("xInventoryNumber", sensor['inventoryNumber'])
+    if "xInventoryNumber" in label:
+        return label.replace("xInventoryNumber", sensor['inventoryNumber'])
+    else:
+        return label
 
 
 def replaceModel(label):
-    return label.replace("xModel", sensor['model'])
+    if "xModel" in label:
+        return label.replace("xModel", sensor['model'])
+    else:
+        return label
 
 
 def replaceSerialNumber(label):
-    return label.replace("xSerialNumber", sensor['serialNumber'])
+    if "xSerialNumber" in label:
+        return label.replace("xSerialNumber", sensor['serialNumber'])
+    else:
+        return label
 
 
 def replaceCalibrationDate(label):
-    return label.replace("xCalibrationDate", sensor['calibrationDate'].strftime("%m.%Y"))
+    if "CalibrationDate" in label:
+        return label.replace("xCalibrationDate", sensor['calibrationDate'].strftime("%m.%Y"))
+    else:
+         return label
 
 
 def replaceCalibrationPlace(label):
-    # Czujnik ciśnienia
-    if sensor['type'] == 5:
-        # jendostka
-        if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
-            return label.replace("xCalibrationPlace", "External")
-        else:
-            # zakres
-            if sensor['maxMeasSignal'] > 35:
+    if "xCalibrationPlace" in label:
+        # Czujnik ciśnienia(5)
+        if sensor['type'] == 5:
+            # jendostka
+            if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
                 return label.replace("xCalibrationPlace", "External")
             else:
-                return label.replace("xCalibrationPlace", "Internal")
+                # zakres
+                if sensor['maxMeasSignal'] > 35:
+                    return label.replace("xCalibrationPlace", "External")
+                else:
+                    return label.replace("xCalibrationPlace", "Internal")
+        else:
+            return label.replace("xCalibrationPlace", "Internal")
+    else:
+        return label
 
 
 def replaceMinAnalogSignal(label):
-    # Czujnik ciśnienia
-    if sensor['type'] == 5:
-        if sensor['minAnalogSignal'] % 1 == 0:
-            return label.replace("xMinAnalogSignal", str(int(sensor['minAnalogSignal'])))
+    if "xMinAnalogSignal" in label:
+        # Czujnik ciśnienia
+        if sensor['type'] == 5:
+            if sensor['minAnalogSignal'] % 1 == 0:
+                return label.replace("xMinAnalogSignal", str(int(sensor['minAnalogSignal'])))
+            else:
+                return label.replace("xMinAnalogSignal", int(sensor['minAnalogSignal']))
         else:
-            return label.replace("xMinAnalogSignal", int(sensor['minAnalogSignal']))
+            return label
+    else:
+        return label
 
 
 def replaceMaxAnalogSignal(label):
-    # Czujnik ciśnienia
-    if sensor['type'] == 5:
-        if sensor['maxAnalogSignal'] % 1 == 0:
-            return label.replace("xMaxAnalogSignal", str(int(sensor['maxAnalogSignal'])))
+    if "xMaxAnalogSignal" in label:
+        # Czujnik ciśnienia
+        if sensor['type'] == 5:
+            if sensor['maxAnalogSignal'] % 1 == 0:
+                return label.replace("xMaxAnalogSignal", str(int(sensor['maxAnalogSignal'])))
+            else:
+                return label.replace("xMaxAnalogSignal", int(sensor['maxAnalogSignal']))
         else:
-            return label.replace("xMaxAnalogSignal", int(sensor['maxAnalogSignal']))
+            return label
+    else:
+        return label
 
 
 def replaceUnitAnalogSignal(label):
-    return label.replace("xUnitAnalogSignal", sensor['unitAnalogSignal'])
+    if "xUnitAnalogSignal" in label:
+        if sensor['unitAnalogSignal'] == '':
+            return label
+        else:
+            return label.replace("xUnitAnalogSignal", sensor['unitAnalogSignal'])
+    else:
+        return label
 
 
 def replaceMinMeasSignal(label):
-    # Czujnik ciśnienia
-    if sensor['type'] == 5:
-        if sensor['minMeasSignal'] % 1 == 0:
-            return label.replace("xMinMeasSignal", str(int(sensor['minMeasSignal'])))
+    if "xMinMeasSignal" in label:
+        # Czujnik ciśnienia(5)
+        if sensor['type'] == 5:
+            if sensor['minMeasSignal'] % 1 == 0:
+                return label.replace("xMinMeasSignal", str(int(sensor['minMeasSignal'])))
+            else:
+                return label.replace("xMinMeasSignal", int(sensor['minMeasSignal']))
         else:
-            return label.replace("xMinMeasSignal", int(sensor['minMeasSignal']))
+            return label
+    else:
+        return label
 
 
 def replaceMaxMeasSignal(label):
-    # Czujnik ciśnienia
-    if sensor['type'] == 5:
-        if sensor['maxMeasSignal'] == 5:
-            return label.replace("xMaxMeasSignal", str(int(sensor['maxMeasSignal'])))
+    if "xMaxMeasSignal" in label:
+        # Czujnik ciśnienia(5)
+        if sensor['type'] == 5:
+            if sensor['maxMeasSignal'] == 5:
+                return label.replace("xMaxMeasSignal", str(int(sensor['maxMeasSignal'])))
+            else:
+                return label.replace("xMaxMeasSignal", str(int(sensor['maxMeasSignal'])))
         else:
-            return label.replace("xMaxMeasSignal", str(int(sensor['maxMeasSignal'])))
+            return label
+    else:
+        return label
 
 
 def replaceUnitMeasSignal(label):
-    return label.replace("xUnitMeasSignal", sensor['unitMeasSignal'])
+    if "xUnitMeasSignal" in label:
+        if sensor['unitMeasSignal'] == '':
+            return label
+        else:
+            return label.replace("xUnitMeasSignal", sensor['unitMeasSignal'])
+    else:
+        return label
 
 
 def replaceSqueezeRange(label):
-    a = label.splitlines()
-    count = 0
-    for char in a:
-        if "xSqueezeRange" in char:
-            break
-        count = count + 1
-    if 1 <= len(a[count].split(';')[1]) <= 15:
-        return label.replace("xSqueezeRange", "q100")
-    elif 16 <= len(a[count].split(';')[1]) <= 20:
-        return label.replace("xSqueezeRange", "q80")
+    if "xSqueezeRange" in label:
+        a = label.splitlines()
+        count = 0
+        for char in a:
+            if "xSqueezeRange" in char:
+                break
+            count = count + 1
+        if 1 <= len(a[count].split(';')[1]) <= 15:
+            return label.replace("xSqueezeRange", "q100")
+        elif 16 <= len(a[count].split(';')[1]) <= 20:
+            return label.replace("xSqueezeRange", "q80")
+        else:
+            return label.replace("xSqueezeRange", "q60")
     else:
-        return label.replace("xSqueezeRange", "q60")
+        return label
 
 
 def replaceOperator(label):
-    return label.replace("xOperator", os.getlogin()[0] + os.getlogin().lower()[1:])
+    if "xOperator" in label:
+        return label.replace("xOperator", os.getlogin()[0] + os.getlogin().lower()[1:])
+    else:
+        return label
 
 
 def replaceSqueezeOperator(label):
-    lengthOperator = len(os.getlogin())
-    if 1 <= lengthOperator <= 15:
-        return label.replace("xSqueezeOperator", "q100")
-    elif 16 <= lengthOperator <= 20:
-        return label.replace("xSqueezeOperator", "q80")
+    if "xSqueezeOperator" in label:
+        lengthOperator = len(os.getlogin())
+        if 1 <= lengthOperator <= 15:
+            return label.replace("xSqueezeOperator", "q100")
+        elif 16 <= lengthOperator <= 20:
+            return label.replace("xSqueezeOperator", "q80")
+        else:
+            return label.replace("xSqueezeOperator", "q60")
     else:
-        return label.replace("xSqueezeOperator", "q60")
+        return label
 
 
 def replaceClass(label):
-    # Czujnik ciśnienia
-    if sensor['type'] == 5:
-        # jendostka
-        if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
-            return label.replace("xClass", '')
-        else:
-            # zakres
-            if sensor['maxMeasSignal'] > 35:
-                return label.replace("xClass", "")
+    if "xClass" in label:
+        # Czujnik ciśnienia
+        if sensor['type'] == 5:
+            # jendostka
+            if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
+                return label.replace("xClass", '')
             else:
-                return label.replace("xClass", "")
+                # zakres
+                if sensor['maxMeasSignal'] > 35:
+                    return label.replace("xClass", "")
+                else:
+                    return label.replace("xClass", "")
+        else:
+            return label
+    else:
+        return label
 
 
 def replaceErrorValue(label):
-    # Czujnik ciśnienia
-    if sensor['type'] == 5:
-        # jendostka
-        if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
-            return label.replace("xErrorValue", '')
-        else:
-            # zakres
-            if sensor['maxMeasSignal'] > 35:
-                return label.replace("xErrorValue", "")
+    if "xErrorValue" in label:
+        # Czujnik ciśnienia
+        if sensor['type'] == 5:
+            # jendostka
+            if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
+                return label.replace("xErrorValue", '')
             else:
-                return label.replace("xErrorValue", "")
+                # zakres
+                if sensor['maxMeasSignal'] > 35:
+                    return label.replace("xErrorValue", "")
+                else:
+                    return label.replace("xErrorValue", "")
+    else:
+        return label
 
 
 def replaceSqueezeClass(label):
-    # Czujnik ciśnienia
-    if sensor['type'] == 5:
-        # jendostka
-        if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
-            return label.replace("xSqueezeClass", "q0")
-        else:
-            # zakres
-            if sensor['maxMeasSignal'] > 35:
+    if "xSqueezeClass" in label:
+        # Czujnik ciśnienia
+        if sensor['type'] == 5:
+            # jendostka
+            if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
                 return label.replace("xSqueezeClass", "q0")
             else:
-                return label.replace("xSqueezeClass", "q0")
+                # zakres
+                if sensor['maxMeasSignal'] > 35:
+                    return label.replace("xSqueezeClass", "q0")
+                else:
+                    return label.replace("xSqueezeClass", "q0")
+    else:
+        return label
 
 
 def deleteLinesWitchQ0(label):
@@ -207,6 +276,8 @@ def deleteLinesWitchQ0(label):
         count = count + 1
     return '\n'.join(a)
 
+
+print(sensor)
 labelScheme = openLabelSheme(preperePathToLabelSheme())
 labelScheme = replaceInventoryNumber(labelScheme)
 labelScheme = replaceModel(labelScheme)

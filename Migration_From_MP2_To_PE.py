@@ -7,7 +7,7 @@ import MP2_Database as MP2
 
 cursorMP2 = MP2.connectWithDatabase()
 cursorPE = PE.connectWithDatabase()
-sensorInventoryNumber = 'ZD5568'
+sensorInventoryNumber = 'ZD7081'
 
 daysInMonth = {
     '01': 31,
@@ -143,7 +143,7 @@ def prepareUnitAnalogSignal(inventoryNumber, cursor):
 def prepareMinMeasSignal(inventoryNumber, cursor):
     type = MP2.getType(inventoryNumber, cursor)
     range = MP2.getRange(inventoryNumber, cursor)
-    if type is not None:
+    if range is not None:
         # Moduł CANopen(39)
         if type == '39':
             return range.split('_')[0]
@@ -311,5 +311,23 @@ def prepareType(inventoryNumber, cursor):
     return MP2.getType(inventoryNumber, cursor)
 
 
-#PE.addNewSensor(cursorPE, prepareInventoryNumber(sensorInventoryNumber, cursorMP2), prepareModel(sensorInventoryNumber, cursorMP2), prepareSerialNumber(sensorInventoryNumber, cursorMP2), prepareProducent(sensorInventoryNumber, cursorMP2), prepareCalibrationPeriod(sensorInventoryNumber, cursorMP2), prepareCalibrationDate(sensorInventoryNumber, cursorMP2), prepareStatus(sensorInventoryNumber, cursorMP2), prepareMinAnalogSignal(sensorInventoryNumber, cursorMP2), prepareMaxAnalogSignal(sensorInventoryNumber, cursorMP2), prepareUnitAnalogSignal(sensorInventoryNumber, cursorMP2), prepareMinMeasSignal(sensorInventoryNumber, cursorMP2), prepareMaxMeasSignal(sensorInventoryNumber, cursorMP2), prepareUnitMeasSignal(sensorInventoryNumber, cursorMP2), prepareType(sensorInventoryNumber, cursorMP2))
+sensor = {
+    'inventoryNumber' : prepareInventoryNumber(sensorInventoryNumber, cursorMP2),
+    'type' : prepareType(sensorInventoryNumber, cursorMP2),
+    'model': prepareModel(sensorInventoryNumber, cursorMP2),
+    'serialNumber' : prepareSerialNumber(sensorInventoryNumber, cursorMP2),
+    'producent' : prepareProducent(sensorInventoryNumber, cursorMP2),
+    'calibrationPeriod' : prepareCalibrationPeriod(sensorInventoryNumber, cursorMP2),
+    'calibrationDate' : prepareCalibrationDate(sensorInventoryNumber, cursorMP2),
+    'status': prepareStatus(sensorInventoryNumber, cursorMP2),
+    'minAnalogSignal' : prepareMinAnalogSignal(sensorInventoryNumber, cursorMP2),
+    'maxAnalogSignal' : prepareMaxAnalogSignal(sensorInventoryNumber, cursorMP2),
+    'unitAnalogSignal' : prepareUnitAnalogSignal(sensorInventoryNumber, cursorMP2),
+    'minMeasSignal' : prepareMinMeasSignal(sensorInventoryNumber, cursorMP2),
+    'maxMeasSignal' : prepareMaxMeasSignal(sensorInventoryNumber, cursorMP2),
+    'unitMeasSignal' : prepareUnitMeasSignal(sensorInventoryNumber, cursorMP2)
+}
+
+
+PE.addNewSensor(cursorPE, sensor['inventoryNumber'], sensor['model'], sensor['serialNumber'], sensor['producent'], sensor['calibrationPeriod'], sensor['calibrationDate'], sensor['status'], sensor['minAnalogSignal'], sensor['maxAnalogSignal'], sensor['unitAnalogSignal'], sensor['minMeasSignal'], sensor['maxAnalogSignal'], sensor['unitMeasSignal'], sensor['type'])
 
