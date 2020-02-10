@@ -1,48 +1,47 @@
-# Czujniki ciśnienia - dodane
+# Czujnik ciśnienia - dodane
+# Komora temperaturowa - w trakcie
+# Komora klimatyczna  - w trakcie
+# Czujnik drogi - w trakcie
 
 import pyodbc
+import socket
 import os
-
 import PE_Database as PE
 import MP2_Database as MP2
+from tkinter import *
 
 
-sensorInventoryNumber = 'ZD7081'
+sensorInventoryNumber = "ZD5224"
 cursorPE = PE.connectWithDatabase()
-pathToLabel = "//wplcswroclaw12m/pdp/01_Team's/TQC_MTS/Kalibracje/FAQ/Program kalibracyjny/"
-
-sensor = {'inventoryNumber': PE.getInventoryNumber(sensorInventoryNumber, cursorPE),
-          'type': PE.getType(sensorInventoryNumber, cursorPE),
-          'model': PE.getModel(sensorInventoryNumber, cursorPE),
-          'serialNumber': PE.getSerialNumber(sensorInventoryNumber, cursorPE),
-          'producent': PE.getProducent(sensorInventoryNumber, cursorPE),
-          'calibrationPeriod': PE.getCalibrationPeriod(sensorInventoryNumber, cursorPE),
-          'calibrationDate': PE.getCalibrationDate(sensorInventoryNumber, cursorPE),
-          'status': PE.getStatus(sensorInventoryNumber, cursorPE),
-          'minAnalogSignal': PE.getMinAnalogSignal(sensorInventoryNumber, cursorPE),
-          'maxAnalogSignal': PE.getMaxAnalogSignal(sensorInventoryNumber, cursorPE),
-          'unitAnalogSignal': PE.getUnitAnalogSignal(sensorInventoryNumber, cursorPE),
-          'minMeasSignal': PE.getMinMeasSignal(sensorInventoryNumber, cursorPE),
-          'maxMeasSignal': PE.getMaxMeasSignal(sensorInventoryNumber, cursorPE),
-          'unitMeasSignal': PE.getUnitMeasSignal(sensorInventoryNumber, cursorPE)
-          }
+pathToSchemeLabel = "//wplcswroclaw12m/pdp/01_Team's/TQC_MTS/Kalibracje/FAQ/Program kalibracyjny/"
+pathToPrintLabel = r"D:\xInventoryNumber.txt"
 
 
-def preperePathToLabelSheme():
-    # Czujnik ciśnienia
-    if sensor['type'] == 5:
-        return os.path.join(pathToLabel, 'Label Pressure Sensor.txt')
-    # Czujnik siły
-    elif sensor['type'] == 7:
-        return os.path.join(pathToLabel, 'Label Force Sensor.txt')
-    # Zestaw pomiarowy
-    elif sensor['type'] == 11:
-        # DEWESoft
-        if "DEWEsoft" is sensor['producent']:
-            return os.path.join(pathToLabel, 'Label DEWEsoft Measurement Set.txt')
-        # Reszta zestawów pomiarowych
+def checkSensorIsExist(inventoryNumber, cursor):
+    if PE.getInventoryNumber(inventoryNumber, cursor) is None:
+        return False
+    else:
+        return True
+
+
+def preperePathToLabelSheme(inventoryNumber, cursor, path):
+    type = PE.getType(inventoryNumber, cursor)
+    producent = PE.getProducent(inventoryNumber, cursor)
+    if type == "Czujnik ciśnienia":
+        return os.path.join(path, "Label Pressure Sensor.txt")
+    elif type == "Czujnik drogi":
+        return os.path.join(path, "Label Distance Sensor.txt")
+    elif type == "Komora temperaturowa":
+        return os.path.join(path, "Label Temperature Chamber.txt")
+    elif type == "Komora klimatyczna":
+        return os.path.join(path, "Label Climate Chamber.txt")
+    elif type == "Czujnik siły":
+        return os.path.join(path, "Label Force Sensor.txt")
+    elif type == "Zestaw pomiarowy":
+        if producent == "DEWEsoft":
+            return os.path.join(path, "Label DEWEsoft Measurement Set.txt")
         else:
-            return os.path.join(pathToLabel, 'Label Measurement Set.txt')
+            return os.path.join(path, "Label Measurement Set.txt")
 
 
 def openLabelSheme(path):
@@ -51,46 +50,51 @@ def openLabelSheme(path):
         label = file.read()
         file.close()
         return label
+    else:
+        print("Taki plik nie istnieje!")
 
 
-def replaceInventoryNumber(label):
+def replaceInventoryNumber(label, inventoryNumber):
     if "xInventoryNumber" in label:
-        return label.replace("xInventoryNumber", sensor['inventoryNumber'])
+        return label.replace("xInventoryNumber", inventoryNumber)
     else:
         return label
 
 
-def replaceModel(label):
+def replaceModel(label, inventoryNumber, cursor):
+    model = PE.getModel(inventoryNumber, cursor)
     if "xModel" in label:
-        return label.replace("xModel", sensor['model'])
+        return label.replace("xModel", model)
     else:
         return label
 
 
-def replaceSerialNumber(label):
+def replaceSerialNumber(label, inventoryNumber, cursor):
+    serialNumber = PE.getSerialNumber(inventoryNumber, cursor)
     if "xSerialNumber" in label:
-        return label.replace("xSerialNumber", sensor['serialNumber'])
+        return label.replace("xSerialNumber", serialNumber)
     else:
         return label
 
 
-def replaceCalibrationDate(label):
+def replaceCalibrationDate(label, inventoryNumber, cursor):
+    calibrationDate = PE.getCalibrationDate(inventoryNumber, cursor)
     if "CalibrationDate" in label:
-        return label.replace("xCalibrationDate", sensor['calibrationDate'].strftime("%m.%Y"))
+        return label.replace("xCalibrationDate", calibrationDate.strftime("%m.%Y"))
     else:
          return label
 
 
-def replaceCalibrationPlace(label):
+def replaceCalibrationPlace(label, inventoryNumber, cursor):
+    type = PE.getType(inventoryNumber, cursor)
+    unitMeasSignal = PE.getUnitMeasSignal(inventoryNumber, cursor)
+    maxMeasSignal = PE.getMaxMeasSignal(inventoryNumber, cursor)
     if "xCalibrationPlace" in label:
-        # Czujnik ciśnienia(5)
-        if sensor['type'] == 5:
-            # jendostka
-            if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
+        if type == "Czujnik ciśnienia":
+            if "bar a" is unitMeasSignal or "mbar a" is unitMeasSignal:
                 return label.replace("xCalibrationPlace", "External")
             else:
-                # zakres
-                if sensor['maxMeasSignal'] > 35:
+                if maxMeasSignal > 35:
                     return label.replace("xCalibrationPlace", "External")
                 else:
                     return label.replace("xCalibrationPlace", "Internal")
@@ -100,78 +104,84 @@ def replaceCalibrationPlace(label):
         return label
 
 
-def replaceMinAnalogSignal(label):
+def replaceMinAnalogSignal(label, inventoryNumber, cursor):
+    type = PE.getType(inventoryNumber, cursor)
+    minAnalogSignal = PE.getMinAnalogSignal(inventoryNumber, cursor)
     if "xMinAnalogSignal" in label:
-        # Czujnik ciśnienia
-        if sensor['type'] == 5:
-            if sensor['minAnalogSignal'] % 1 == 0:
-                return label.replace("xMinAnalogSignal", str(int(sensor['minAnalogSignal'])))
+        if type == "Czujnik ciśnienia":
+            if minAnalogSignal % 1 == 0:
+                return label.replace("xMinAnalogSignal", str(int(minAnalogSignal)))
             else:
-                return label.replace("xMinAnalogSignal", int(sensor['minAnalogSignal']))
+                return label.replace("xMinAnalogSignal", int(minAnalogSignal))
         else:
             return label
     else:
         return label
 
 
-def replaceMaxAnalogSignal(label):
+def replaceMaxAnalogSignal(label, inventoryNumber, cursor):
+    type = PE.getType(inventoryNumber, cursor)
+    maxAnalogSignal = PE.getMaxAnalogSignal(inventoryNumber, cursor)
     if "xMaxAnalogSignal" in label:
-        # Czujnik ciśnienia
-        if sensor['type'] == 5:
-            if sensor['maxAnalogSignal'] % 1 == 0:
-                return label.replace("xMaxAnalogSignal", str(int(sensor['maxAnalogSignal'])))
+        if type == "Czujnik ciśnienia":
+            if maxAnalogSignal % 1 == 0:
+                return label.replace("xMaxAnalogSignal", str(int(maxAnalogSignal)))
             else:
-                return label.replace("xMaxAnalogSignal", int(sensor['maxAnalogSignal']))
+                return label.replace("xMaxAnalogSignal", int(maxAnalogSignal))
         else:
             return label
     else:
         return label
 
 
-def replaceUnitAnalogSignal(label):
+def replaceUnitAnalogSignal(label, inventoryNumber, cursor):
+    unitAnalogSignal = PE.getUnitAnalogSignal(inventoryNumber, cursor)
     if "xUnitAnalogSignal" in label:
-        if sensor['unitAnalogSignal'] == '':
+        if unitAnalogSignal == "":
             return label
         else:
-            return label.replace("xUnitAnalogSignal", sensor['unitAnalogSignal'])
+            return label.replace("xUnitAnalogSignal", unitAnalogSignal)
     else:
         return label
 
 
-def replaceMinMeasSignal(label):
+def replaceMinMeasSignal(label, inventoryNumber, cursor):
+    type = PE.getType(inventoryNumber, cursor)
+    minMeasSignal = PE.getMinMeasSignal(inventoryNumber, cursor)
     if "xMinMeasSignal" in label:
-        # Czujnik ciśnienia(5)
-        if sensor['type'] == 5:
-            if sensor['minMeasSignal'] % 1 == 0:
-                return label.replace("xMinMeasSignal", str(int(sensor['minMeasSignal'])))
+        if type == "Czujnik ciśnienia":
+            if minMeasSignal % 1 == 0:
+                return label.replace("xMinMeasSignal", str(int(minMeasSignal)))
             else:
-                return label.replace("xMinMeasSignal", int(sensor['minMeasSignal']))
+                return label.replace("xMinMeasSignal", int(minMeasSignal))
         else:
             return label
     else:
         return label
 
 
-def replaceMaxMeasSignal(label):
+def replaceMaxMeasSignal(label, inventoryNumber, cursor):
+    type = PE.getType(inventoryNumber, cursor)
+    maxMeasSignal = PE.getMaxMeasSignal(inventoryNumber, cursor)
     if "xMaxMeasSignal" in label:
-        # Czujnik ciśnienia(5)
-        if sensor['type'] == 5:
-            if sensor['maxMeasSignal'] == 5:
-                return label.replace("xMaxMeasSignal", str(int(sensor['maxMeasSignal'])))
+        if type == "Czujnik ciśnienia":
+            if maxMeasSignal % 1 == 0:
+                return label.replace("xMaxMeasSignal", str(int(maxMeasSignal)))
             else:
-                return label.replace("xMaxMeasSignal", str(int(sensor['maxMeasSignal'])))
+                return label.replace("xMaxMeasSignal", int(maxMeasSignal))
         else:
             return label
     else:
         return label
 
 
-def replaceUnitMeasSignal(label):
+def replaceUnitMeasSignal(label, inventoryNumber, cursor):
+    unitMeasSignal = PE.getUnitMeasSignal(inventoryNumber, cursor)
     if "xUnitMeasSignal" in label:
-        if sensor['unitMeasSignal'] == '':
+        if unitMeasSignal == "":
             return label
         else:
-            return label.replace("xUnitMeasSignal", sensor['unitMeasSignal'])
+            return label.replace("xUnitMeasSignal", unitMeasSignal)
     else:
         return label
 
@@ -214,16 +224,16 @@ def replaceSqueezeOperator(label):
         return label
 
 
-def replaceClass(label):
+def replaceClass(label, inventoryNumber, cursor):
+    type = PE.getType(inventoryNumber, cursor)
+    unitMeasSignal = PE.getUnitMeasSignal(inventoryNumber, cursor)
+    maxMeasSignal = PE.getMaxMeasSignal(inventoryNumber, cursor)
     if "xClass" in label:
-        # Czujnik ciśnienia
-        if sensor['type'] == 5:
-            # jendostka
-            if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
+        if type == "Czujnik ciśnienia":
+            if "bar a" is unitMeasSignal or "mbar a" is unitMeasSignal:
                 return label.replace("xClass", '')
             else:
-                # zakres
-                if sensor['maxMeasSignal'] > 35:
+                if maxMeasSignal > 35:
                     return label.replace("xClass", "")
                 else:
                     return label.replace("xClass", "")
@@ -233,36 +243,52 @@ def replaceClass(label):
         return label
 
 
-def replaceErrorValue(label):
+def replaceErrorValue(label, inventoryNumber, cursor):
+    type = PE.getType(inventoryNumber, cursor)
+    unitMeasSignal = PE.getUnitMeasSignal(inventoryNumber, cursor)
+    maxMeasSignal = PE.getMaxMeasSignal(inventoryNumber, cursor)
     if "xErrorValue" in label:
-        # Czujnik ciśnienia
-        if sensor['type'] == 5:
-            # jendostka
-            if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
+        if type == "Czujnik ciśnienia":
+            if "bar a" is unitMeasSignal or "mbar a" is unitMeasSignal:
                 return label.replace("xErrorValue", '')
             else:
-                # zakres
-                if sensor['maxMeasSignal'] > 35:
+                if maxMeasSignal > 35:
                     return label.replace("xErrorValue", "")
                 else:
                     return label.replace("xErrorValue", "")
+        else:
+            return label.replace("xErrorValue", "")
     else:
         return label
 
 
-def replaceSqueezeClass(label):
+def replaceSqueezeClass(label, inventoryNumber, cursor):
+    type = PE.getType(inventoryNumber, cursor)
+    unitMeasSignal = PE.getUnitMeasSignal(inventoryNumber, cursor)
+    maxMeasSignal = PE.getMaxMeasSignal(inventoryNumber, cursor)
     if "xSqueezeClass" in label:
-        # Czujnik ciśnienia
-        if sensor['type'] == 5:
-            # jendostka
-            if "bar a" is sensor['unitMeasSignal'] or "mbar a" is sensor['unitMeasSignal']:
+        if type == "Czujnik ciśnienia":
+            if "bar a" is unitMeasSignal or "mbar a" is unitMeasSignal:
                 return label.replace("xSqueezeClass", "q0")
             else:
-                # zakres
-                if sensor['maxMeasSignal'] > 35:
+                if maxMeasSignal > 35:
                     return label.replace("xSqueezeClass", "q0")
                 else:
                     return label.replace("xSqueezeClass", "q0")
+        else:
+            return label
+    else:
+        return label
+
+
+def replaceName(label, inventoryNumber, cursor):
+    type = PE.getType(inventoryNumber, cursor)
+    unitMeasSignal = PE.getUnitMeasSignal(inventoryNumber, cursor)
+    if "xName" in label:
+        if type == "Komora temperaturowa":
+            return label.replace("xName", unitMeasSignal)
+        elif type == "Komora klimatyczna":
+            return label.replace("xName", unitMeasSignal)
     else:
         return label
 
@@ -272,30 +298,55 @@ def deleteLinesWitchQ0(label):
     count = 0
     for char in a:
         if "q0" in char:
-            a[count] = ''
+            a[count] = ""
         count = count + 1
     return '\n'.join(a)
 
 
-print(sensor)
-labelScheme = openLabelSheme(preperePathToLabelSheme())
-labelScheme = replaceInventoryNumber(labelScheme)
-labelScheme = replaceModel(labelScheme)
-labelScheme = replaceSerialNumber(labelScheme)
-labelScheme = replaceCalibrationDate(labelScheme)
-labelScheme = replaceCalibrationPlace(labelScheme)
-labelScheme = replaceMinAnalogSignal(labelScheme)
-labelScheme = replaceMaxAnalogSignal(labelScheme)
-labelScheme = replaceUnitAnalogSignal(labelScheme)
-labelScheme = replaceMinMeasSignal(labelScheme)
-labelScheme = replaceMaxMeasSignal(labelScheme)
-labelScheme = replaceUnitMeasSignal(labelScheme)
-labelScheme = replaceOperator(labelScheme)
-labelScheme = replaceSqueezeOperator(labelScheme)
-labelScheme = replaceSqueezeRange(labelScheme)
-labelScheme = replaceClass(labelScheme)
-labelScheme = replaceErrorValue(labelScheme)
-labelScheme = replaceSqueezeClass(labelScheme)
-labelScheme = deleteLinesWitchQ0(labelScheme)
+def writeLabelToFile(label, inventoryNumber, path):
+    path = path.replace("xInventoryNumber", inventoryNumber)
+    file = open(path, "w+")
+    file.write(label)
+    file.close()
 
-print(labelScheme)
+
+def printLabel(label, inventoryNumber):
+    cmd = r"cmd /k copy /b D:\xInventoryNumber.txt \\xHost\Mach4"
+    cmd = cmd.replace("xHost", socket.gethostname())
+    cmd = cmd.replace("xInventoryNumber", inventoryNumber)
+    os.system(cmd)
+
+
+def removeFile(inventoryNumber, path):
+    file = path.replace("xInventoryNumber", inventoryNumber)
+    os.remove(file)
+
+
+if checkSensorIsExist(sensorInventoryNumber, cursorPE):
+    labelScheme = openLabelSheme(preperePathToLabelSheme(sensorInventoryNumber, cursorPE, pathToSchemeLabel))
+    print(labelScheme)
+    labelScheme = replaceInventoryNumber(labelScheme, sensorInventoryNumber)
+    labelScheme = replaceModel(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceSerialNumber(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceCalibrationDate(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceCalibrationPlace(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceMinAnalogSignal(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceMaxAnalogSignal(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceUnitAnalogSignal(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceMinMeasSignal(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceMaxMeasSignal(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceUnitMeasSignal(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceOperator(labelScheme)
+    labelScheme = replaceSqueezeOperator(labelScheme)
+    labelScheme = replaceSqueezeRange(labelScheme)
+    labelScheme = replaceClass(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceErrorValue(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceSqueezeClass(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = replaceName(labelScheme, sensorInventoryNumber, cursorPE)
+    labelScheme = deleteLinesWitchQ0(labelScheme)
+    writeLabelToFile(labelScheme, sensorInventoryNumber, pathToPrintLabel)
+    printLabel(labelScheme, sensorInventoryNumber)
+    removeFile(sensorInventoryNumber, pathToPrintLabel)
+else:
+    print("Nie ma takiego czujnika w bazie danych PE")
+
