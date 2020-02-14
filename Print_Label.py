@@ -345,8 +345,58 @@ if checkSensorIsExist(sensorInventoryNumber, cursorPE):
     labelScheme = replaceName(labelScheme, sensorInventoryNumber, cursorPE)
     labelScheme = deleteLinesWitchQ0(labelScheme)
     writeLabelToFile(labelScheme, sensorInventoryNumber, pathToPrintLabel)
-    printLabel(labelScheme, sensorInventoryNumber)
-    removeFile(sensorInventoryNumber, pathToPrintLabel)
+    #printLabel(labelScheme, sensorInventoryNumber)
+    #removeFile(sensorInventoryNumber, pathToPrintLabel)
 else:
     print("Nie ma takiego czujnika w bazie danych PE")
 
+root = Tk()
+root.title("Wydruk etykiet kalibracyjnych")
+
+l = Label(root, text="\n Wprowadź numer inwentarzowy przyrządu pomiarowego,\n dla którego chcesz wydrukować etykietę kalibracyjną: ")
+l.grid(row=0, column=0, padx=10, pady=5)
+
+eInventoryNumber = Entry(root, width=35, borderwidth=2)
+eInventoryNumber.grid(row=1, column=0, pady=5)
+eInventoryNumber.get()
+
+
+# Szablon tekstu po wyszukaniu:
+# UŻYJ ETYKIETY %s !!!
+# Wydrukuj etykietę kalibracyjną dla %s
+# Numer inwentarzowy: %s
+# Model: %s
+# Numer seryjny: %s
+# Producent: %s
+# %s
+#
+#UŻYJ ETYKIETY %s !!!
+
+
+def searchSensor():
+    text = "UŻYJ ETYKIETY xSize !!! \n\n Wydrukuj etykietę kalibracyjną dla xType \n Numer inwentarzowy: xInventoryNumber \n" \
+           " Model: xModel \n Numer seryjny: xSerialNumber \n Producent: xProducent \n\n " \
+           " UŻYJ ETYKIETY xSize !!! \n"
+    inventoryNumber = eInventoryNumber.get().upper()[:2] + eInventoryNumber.get()[2:]
+    if PE.getInventoryNumber(inventoryNumber, cursorPE) is not None:
+        type = PE.getType(inventoryNumber, cursorPE)
+        if type == "Czujnik ciśnienia":
+            text = text.replace("xSize", "20x20")
+            text = text.replace("xType", "czujnika ciśnienia")
+            text = text.replace("xInventoryNumber", inventoryNumber)
+            text = text.replace("xModel", PE.getModel(inventoryNumber, cursorPE))
+            text = text.replace("xSerialNumber", PE.getSerialNumber(inventoryNumber, cursorPE))
+            text = text.replace("xProducent", PE.getProducent(inventoryNumber, cursorPE))
+
+    else:
+        text = "Taki czujnik nie istnieje"
+    fSensorDescription = LabelFrame(root, text= "Opis przyrz przyrządu pomiarowego: ")
+    fSensorDescription.grid(row=3, column=0,)
+    bPrint = Button(fSensorDescription, text=text)
+    bPrint.pack()
+
+bFind = Button(root, text="Znajdź wprowadzony przyrząd pomiarowy", command=searchSensor)
+bFind.grid(row=2, column=0, pady=5)
+
+
+root.mainloop()
