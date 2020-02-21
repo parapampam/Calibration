@@ -136,6 +136,13 @@ class MP2(Database):
                                  )
         return connect.cursor()
 
+    def getLastMeasurementInstrumentInDatabase(self):
+        query = "SELECT EQUIP.EQNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE EQUIP.EQNUM LIKE 'LP[_]%' ORDER BY EQUIP.EQNUM DESC"
+        cursor = self.connectWithDatabase()
+        cursor.execute(query)
+        return cursor.fetchone()[0]
+
+
     def measurementInstrumentInDatabase(self):
         try:
             inventoryNumber = self.getInventoryNumber()
