@@ -1,7 +1,9 @@
-import pyodbc
+import sys
 import Databases as Db
 from tkinter import *
 
+print(sys.path
+      )
 window = Tk()
 window.title("Sprawdź kod obiektu ostatniego przyrządu pomiarowego w bazie danych MP2")
 
