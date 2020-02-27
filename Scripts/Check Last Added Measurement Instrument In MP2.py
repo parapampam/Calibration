@@ -2,12 +2,10 @@ import sys
 import Databases as Db
 from tkinter import *
 
-print(sys.path
-      )
 window = Tk()
 window.title("Sprawdź kod obiektu ostatniego przyrządu pomiarowego w bazie danych MP2")
 
-myLabel = Label(window, text=("\nKod obiektu ostatnio dodanego przyrzyądzu pomiarowego to: \n\n"
+myLabel = Label(window, text=("\nKod obiektu ostatnio dodanego przyrządu pomiarowego to: \n\n"
                               + str(Db.MP2.getLastMeasurementInstrumentInDatabase(Db.MP2())))
                 + "\n")
 myLabel.pack(padx=20)
