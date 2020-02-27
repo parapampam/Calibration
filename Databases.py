@@ -2,6 +2,39 @@ import pyodbc
 import datetime
 
 
+sensorType = {
+    "Czujnik drogi": {"MP2": "Czujnik drogi", "PE": 3},
+    "Suwmiarka": {"MP2": "Suwmiarka", "PE": 4},
+    "Czujnik cisnienia": {"MP2": "Czujnik ciśnienia", "PE": 5},
+    "Przeplywomierz": {"MP2": "Przepływomierz", "PE": 6},
+    "Waga": {"MP2": "Waga", "PE": 10},
+    "Zestaw pomiarowy": {"MP2": "Zestaw pomiarowy", "PE": 11},
+    "Glebokosciomierz": {"MP2": "Głębokościomierz", "PE": 14},
+    "Mikrometr": {"MP2": "Mikrometr", "PE": 16},
+    "Wysokosciomierz": {"MP2": "Wysokościomierz", "PE": 19},
+    "Piecyk": {"MP2": "Piecyk", "PE": 25},
+    "Komora klimatyczna": {"MP2": "Komora klimatyczna", "PE": 28},
+    "Komora temperaturowa": {"MP2": "Komora temperaturowa", "PE": 36},
+    "Komora szokowa": {"MP2": "Komora szokowa", "PE": 37},
+    "Komora solna": {"MP2": "Komora solna", "PE": 40}
+}
+
+daysInMonth = {
+            "01": 31,
+            "02": 28,
+            "03": 31,
+            "04": 30,
+            "05": 31,
+            "06": 30,
+            "07": 31,
+            "08": 31,
+            "09": 30,
+            "10": 31,
+            "11": 30,
+            "12": 31
+        }
+
+
 class Database:
     def __init__(self, inventoryNumber = ""):
         self.inventoryNumber = inventoryNumber
@@ -118,10 +151,12 @@ class PE(Database):
 
     def addNewSensor(self, model, serialNumber, producent, calibrationPeriod, calibrationDate,
                      status, minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal,
-                     unitMeasSignal, type, cursor):
+                     unitMeasSignal, type):
+        global sensorType
+        cursor = self.connectWithDatabase()
         query = "INSERT INTO Baza_czujniki (nr_zd, k_modelu, n_seryjny, prod, okres_k, kolejna_k, status, syg_ana_min, syg_ana_max, jednostka_ana, syg_mierz_min, syg_mierz_max, jednostka_mierz, typ_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         cursor.execute(query, (self.inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate, status, minAnalogSignal,
-        maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal, unitMeasSignal, type))
+        maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal, unitMeasSignal, (sensorType[type][PE])))
         cursor.commit()
 
 
@@ -157,13 +192,9 @@ class MP2(Database):
         return super().get(query)
 
     def getType(self):
-        sensorType = {
-            "Czujnik cisnienia": "Czujnik ciśnienia",
-            "Komora temperaturowa": "Komora temperaturowa",
-            "Suwmiarka": "Suwmiarka"
-        }
+        global sensorType
         query = "SELECT EQUIP.DESCRIPTION FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        return sensorType[super().get(query)]
+        return sensorType[super().get(query)]["MP2"]
 
     def getModel(self):
         query = "SELECT EQUIP.MODELNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
@@ -182,20 +213,7 @@ class MP2(Database):
         return super().get(query).split(" ")[0]
 
     def getCalibrationDate(self):
-        daysInMonth = {
-            "01": 31,
-            "02": 28,
-            "03": 31,
-            "04": 30,
-            "05": 31,
-            "06": 30,
-            "07": 31,
-            "08": 31,
-            "09": 30,
-            "10": 31,
-            "11": 30,
-            "12": 31
-        }
+        global daysInMonth
         query = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         calibrationDate = super().get(query)
         if "w kalibracji" in calibrationDate:
@@ -207,20 +225,7 @@ class MP2(Database):
         return calibrationDate
 
     def getStatus(self):
-        daysInMonth = {
-            "01": 31,
-            "02": 28,
-            "03": 31,
-            "04": 30,
-            "05": 31,
-            "06": 30,
-            "07": 31,
-            "08": 31,
-            "09": 30,
-            "10": 31,
-            "11": 30,
-            "12": 31
-        }
+        global daysInMonth
         query = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         status = super().get(query)
         if "w kalibracji" in status:
