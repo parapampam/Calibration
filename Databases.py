@@ -7,8 +7,10 @@ sensorType = {
     "Suwmiarka": {"MP2": "Suwmiarka", "PE": 4},
     "Czujnik cisnienia": {"MP2": "Czujnik ciśnienia", "PE": 5},
     "Przeplywomierz": {"MP2": "Przepływomierz", "PE": 6},
+    "Czujnik sily": {"MP2": "Czujnik siły", "PE": 7},
     "Waga": {"MP2": "Waga", "PE": 10},
     "Zestaw pomiarowy": {"MP2": "Zestaw pomiarowy", "PE": 11},
+    "Klucz dynamometryczny": {"MP2": "Klucz dynamometryczny", "PE": 12},
     "Glebokosciomierz": {"MP2": "Głębokościomierz", "PE": 14},
     "Mikrometr": {"MP2": "Mikrometr", "PE": 16},
     "Wysokosciomierz": {"MP2": "Wysokościomierz", "PE": 19},
@@ -47,6 +49,14 @@ class Database:
         cursor.execute(query)
         return cursor.fetchone()[0]
 
+    def getKey(self, type):
+        global sensorType
+        for key in sensorType.keys():
+            for search, value in sensorType[key].items():
+                if type == value:
+                    return key
+                else:
+                    pass
 
 class PE(Database):
     def connectWithDatabase(self):
@@ -149,14 +159,18 @@ class PE(Database):
         query = "SELECT jednostka_mierz FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
         return super().get(query)
 
+
     def addNewSensor(self, model, serialNumber, producent, calibrationPeriod, calibrationDate,
                      status, minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal,
                      unitMeasSignal, type):
         global sensorType
+        print(self.inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate,
+                     status, minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal,
+                     unitMeasSignal, type)
+        print(sensorType[super().getKey(type)]["PE"])
         cursor = self.connectWithDatabase()
         query = "INSERT INTO Baza_czujniki (nr_zd, k_modelu, n_seryjny, prod, okres_k, kolejna_k, status, syg_ana_min, syg_ana_max, jednostka_ana, syg_mierz_min, syg_mierz_max, jednostka_mierz, typ_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        cursor.execute(query, (self.inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate, status, minAnalogSignal,
-        maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal, unitMeasSignal, (sensorType[type][PE])))
+        cursor.execute(query, (self.inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate, status, minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal, unitMeasSignal, sensorType[super().getKey(type)]["PE"]))
         cursor.commit()
 
 
@@ -272,8 +286,10 @@ class MP2(Database):
         minMeasSignal = super().get(query)
         if "V" in minMeasSignal or "mA" in minMeasSignal:
             minMeasSignal = minMeasSignal.split("_")[2]
-        else:
+        elif "_" in minMeasSignal:
             minMeasSignal = minMeasSignal.split("_")[0]
+        else:
+            minMeasSignal = ""
         return minMeasSignal
 
     def getMaxMeasSignal(self):
@@ -281,18 +297,24 @@ class MP2(Database):
         maxMeasSignal = super().get(query)
         if "V" in maxMeasSignal or "mA" in maxMeasSignal:
             maxMeasSignal = maxMeasSignal.split("_")[3]
-        else:
+            maxMeasSignal = maxMeasSignal[:len(maxMeasSignal) - self.countNumberLetters(maxMeasSignal)]
+        elif "_" in maxMeasSignal:
             maxMeasSignal = maxMeasSignal.split("_")[1]
-        return maxMeasSignal[:len(maxMeasSignal) - self.countNumberLetters(maxMeasSignal)]
+            maxMeasSignal = maxMeasSignal[:len(maxMeasSignal) - self.countNumberLetters(maxMeasSignal)]
+        else:
+            maxMeasSignal = ""
+        return maxMeasSignal
 
     def getUnitMeasSignal(self):
         query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         unitMeasSignal = super().get(query)
         if "V" in unitMeasSignal or "mA" in unitMeasSignal:
             unitMeasSignal = unitMeasSignal.split("_")[3]
-        else:
+            unitMeasSignal = unitMeasSignal[-self.countNumberLetters(unitMeasSignal):]
+        elif "_" in unitMeasSignal:
             unitMeasSignal = unitMeasSignal.split("_")[1]
-        return unitMeasSignal[-self.countNumberLetters(unitMeasSignal):]
+            unitMeasSignal = unitMeasSignal[-self.countNumberLetters(unitMeasSignal):]
+        return unitMeasSignal
 
     def countNumberLetters(self, string):
         count = 0
