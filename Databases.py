@@ -1,6 +1,6 @@
 import pyodbc
 import datetime
-
+from calendar import monthrange
 
 sensorType = {
     "Czujnik drogi": {"MP2": "Czujnik drogi", "PE": 3},
@@ -20,22 +20,6 @@ sensorType = {
     "Komora szokowa": {"MP2": "Komora szokowa", "PE": 37},
     "Komora solna": {"MP2": "Komora solna", "PE": 40}
 }
-
-daysInMonth = {
-            "01": 31,
-            "02": 28,
-            "03": 31,
-            "04": 30,
-            "05": 31,
-            "06": 30,
-            "07": 31,
-            "08": 31,
-            "09": 30,
-            "10": 31,
-            "11": 30,
-            "12": 31
-        }
-
 
 class Database:
     def __init__(self, inventoryNumber = ""):
@@ -227,26 +211,24 @@ class MP2(Database):
         return super().get(query).split(" ")[0]
 
     def getCalibrationDate(self):
-        global daysInMonth
         query = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         calibrationDate = super().get(query)
         if "w kalibracji" in calibrationDate:
             calibrationDate = datetime.date.today()
         elif "archiwum" in calibrationDate:
-            calibrationDate =  datetime.date.today()
+            calibrationDate = datetime.date.today()
         else:
-            calibrationDate = datetime.date(int(calibrationDate[3:]), int(calibrationDate[:2]), daysInMonth[calibrationDate[:2]])
+            calibrationDate = datetime.date(int(calibrationDate[3:]), int(calibrationDate[:2]), monthrange(calibrationDate[3:], calibrationDate[:2])[1])
         return calibrationDate
 
     def getStatus(self):
-        global daysInMonth
         query = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         status = super().get(query)
         if "w kalibracji" in status:
             status = "w kalibracji"
         elif "archiwum" in status:
             status = "w archiwum"
-        elif datetime.date(int(status[3:]), int(status[:2]), daysInMonth[status[:2]]) > datetime.date.today():
+        elif datetime.date(int(status[3:]), int(status[:2]), monthrange(int(status[3:]), int(status[:2]))[1]) > datetime.date.today():
             status = "aktualna kalibracja"
         else:
             status = "przeterminowana kalibracja"
