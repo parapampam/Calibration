@@ -21,14 +21,15 @@ sensorType = {
     "Komora solna": {"MP2": "Komora solna", "PE": 40}
 }
 
+
 class Database:
-    def __init__(self, inventoryNumber = ""):
+    def __init__(self, inventoryNumber=""):
         self.inventoryNumber = inventoryNumber
 
     def connectWithDatabase(self):
         pass
 
-    def get(self, query = ""):
+    def get(self, query=""):
         cursor = self.connectWithDatabase()
         cursor.execute(query)
         return cursor.fetchone()[0]
@@ -42,13 +43,14 @@ class Database:
                 else:
                     pass
 
+
 class PE(Database):
     def connectWithDatabase(self):
         connect = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server};'
-                                                   'Server=WPLSXSQL1;'
-                                                   'Database=sensmandb;'
-                                                   'uid=admuser;pwd=admu$er;'
-                                                   )
+                                 'Server=WPLSXSQL1;'
+                                 'Database=sensmandb;'
+                                 'uid=admuser;pwd=admu$er;'
+                                 )
         return connect.cursor()
 
     def measurementInstrumentInDatabase(self):
@@ -56,7 +58,7 @@ class PE(Database):
             if self.getInventoryNumber():
                 exist = True
             else:
-                exist =  False
+                exist = False
         except TypeError:
             exist = False
         return exist
@@ -66,7 +68,7 @@ class PE(Database):
         return super().get(query)
 
     def getType(self):
-        query = "SELECT Btc.lo FROM Baza_typ_czujnika AS Btc JOIN Baza_czujniki AS Bc ON Bc.typ_id = Btc.id AND Bc.nr_zd = '"\
+        query = "SELECT Btc.lo FROM Baza_typ_czujnika AS Btc JOIN Baza_czujniki AS Bc ON Bc.typ_id = Btc.id AND Bc.nr_zd = '" \
                 + self.inventoryNumber + "'"
         return super().get(query)
 
@@ -143,18 +145,16 @@ class PE(Database):
         query = "SELECT jednostka_mierz FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
         return super().get(query)
 
-
     def addNewSensor(self, model, serialNumber, producent, calibrationPeriod, calibrationDate,
                      status, minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal,
                      unitMeasSignal, type):
         global sensorType
-        print(self.inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate,
-                     status, minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal,
-                     unitMeasSignal, type)
-        print(sensorType[super().getKey(type)]["PE"])
         cursor = self.connectWithDatabase()
         query = "INSERT INTO Baza_czujniki (nr_zd, k_modelu, n_seryjny, prod, okres_k, kolejna_k, status, syg_ana_min, syg_ana_max, jednostka_ana, syg_mierz_min, syg_mierz_max, jednostka_mierz, typ_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        cursor.execute(query, (self.inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate, status, minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal, unitMeasSignal, sensorType[super().getKey(type)]["PE"]))
+        cursor.execute(query, (
+        self.inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate, status,
+        minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal, unitMeasSignal,
+        sensorType[super().getKey(type)]["PE"]))
         cursor.commit()
 
 
@@ -173,7 +173,6 @@ class MP2(Database):
         cursor = self.connectWithDatabase()
         cursor.execute(query)
         return cursor.fetchone()[0]
-
 
     def measurementInstrumentInDatabase(self):
         try:
@@ -218,7 +217,8 @@ class MP2(Database):
         elif "archiwum" in calibrationDate:
             calibrationDate = datetime.date.today()
         else:
-            calibrationDate = datetime.date(int(calibrationDate[3:]), int(calibrationDate[:2]), monthrange(calibrationDate[3:], calibrationDate[:2])[1])
+            calibrationDate = datetime.date(int(calibrationDate[3:]), int(calibrationDate[:2]),
+                                            monthrange(calibrationDate[3:], calibrationDate[:2])[1])
         return calibrationDate
 
     def getStatus(self):
@@ -228,7 +228,8 @@ class MP2(Database):
             status = "w kalibracji"
         elif "archiwum" in status:
             status = "w archiwum"
-        elif datetime.date(int(status[3:]), int(status[:2]), monthrange(int(status[3:]), int(status[:2]))[1]) > datetime.date.today():
+        elif datetime.date(int(status[3:]), int(status[:2]),
+                           monthrange(int(status[3:]), int(status[:2]))[1]) > datetime.date.today():
             status = "aktualna kalibracja"
         else:
             status = "przeterminowana kalibracja"
@@ -304,4 +305,3 @@ class MP2(Database):
             if char.isalpha():
                 count = count + 1
         return count
-
