@@ -218,7 +218,7 @@ class MP2(Database):
             calibrationDate = datetime.date.today()
         else:
             calibrationDate = datetime.date(int(calibrationDate[3:]), int(calibrationDate[:2]),
-                                            monthrange(calibrationDate[3:], calibrationDate[:2])[1])
+                                            monthrange(int(calibrationDate[3:]), int(calibrationDate[:2]))[1])
         return calibrationDate
 
     def getStatus(self):
