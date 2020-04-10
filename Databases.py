@@ -238,65 +238,83 @@ class MP2(Database):
     def getMinAnalogSignal(self):
         query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         minAnalogSignal = super().get(query)
-        if "V" in minAnalogSignal or "mA" in minAnalogSignal:
-            minAnalogSignal = minAnalogSignal.split("_")[0]
-        else:
+        if minAnalogSignal is None:
             minAnalogSignal = ""
+        else:
+            if "V" in minAnalogSignal or "mA" in minAnalogSignal:
+                minAnalogSignal = minAnalogSignal.split("_")[0]
+            else:
+                minAnalogSignal = ""
         return minAnalogSignal
 
     def getMaxAnalogSignal(self):
         query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         maxAnalogSignal = super().get(query)
-        if "V" in maxAnalogSignal or "mA" in maxAnalogSignal:
-            maxAnalogSignal = maxAnalogSignal.split("_")[1]
-            maxAnalogSignal = maxAnalogSignal[:(len(maxAnalogSignal) - self.countNumberLetters(maxAnalogSignal))]
-        else:
+        if maxAnalogSignal is None:
             maxAnalogSignal = ""
+        else:
+            if "V" in maxAnalogSignal or "mA" in maxAnalogSignal:
+                maxAnalogSignal = maxAnalogSignal.split("_")[1]
+                maxAnalogSignal = maxAnalogSignal[:(len(maxAnalogSignal) - self.countNumberLetters(maxAnalogSignal))]
+            else:
+                maxAnalogSignal = ""
         return maxAnalogSignal
 
     def getUnitAnalogSignal(self):
         query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         unitAnalogSignal = super().get(query)
-        if "V" in unitAnalogSignal or "mA" in unitAnalogSignal:
-            unitAnalogSignal = unitAnalogSignal.split("_")[1]
-            unitAnalogSignal = unitAnalogSignal[-self.countNumberLetters(unitAnalogSignal):]
-        else:
+        if unitAnalogSignal is None:
             unitAnalogSignal = ""
+        else:
+            if "V" in unitAnalogSignal or "mA" in unitAnalogSignal:
+                unitAnalogSignal = unitAnalogSignal.split("_")[1]
+                unitAnalogSignal = unitAnalogSignal[-self.countNumberLetters(unitAnalogSignal):]
+            else:
+                unitAnalogSignal = ""
         return unitAnalogSignal
 
     def getMinMeasSignal(self):
         query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         minMeasSignal = super().get(query)
-        if "V" in minMeasSignal or "mA" in minMeasSignal:
-            minMeasSignal = minMeasSignal.split("_")[2]
-        elif "_" in minMeasSignal:
-            minMeasSignal = minMeasSignal.split("_")[0]
-        else:
+        if minMeasSignal is None:
             minMeasSignal = ""
+        else:
+            if "V" in minMeasSignal or "mA" in minMeasSignal:
+                minMeasSignal = minMeasSignal.split("_")[2]
+            elif "_" in minMeasSignal:
+                minMeasSignal = minMeasSignal.split("_")[0]
+            else:
+                minMeasSignal = ""
         return minMeasSignal
 
     def getMaxMeasSignal(self):
         query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         maxMeasSignal = super().get(query)
-        if "V" in maxMeasSignal or "mA" in maxMeasSignal:
-            maxMeasSignal = maxMeasSignal.split("_")[3]
-            maxMeasSignal = maxMeasSignal[:len(maxMeasSignal) - self.countNumberLetters(maxMeasSignal)]
-        elif "_" in maxMeasSignal:
-            maxMeasSignal = maxMeasSignal.split("_")[1]
-            maxMeasSignal = maxMeasSignal[:len(maxMeasSignal) - self.countNumberLetters(maxMeasSignal)]
-        else:
+        if maxMeasSignal is None:
             maxMeasSignal = ""
+        else:
+            if "V" in maxMeasSignal or "mA" in maxMeasSignal:
+                maxMeasSignal = maxMeasSignal.split("_")[3]
+                maxMeasSignal = maxMeasSignal[:len(maxMeasSignal) - self.countNumberLetters(maxMeasSignal)]
+            elif "_" in maxMeasSignal:
+                maxMeasSignal = maxMeasSignal.split("_")[1]
+                maxMeasSignal = maxMeasSignal[:len(maxMeasSignal) - self.countNumberLetters(maxMeasSignal)]
+            else:
+                maxMeasSignal = ""
         return maxMeasSignal
 
     def getUnitMeasSignal(self):
         query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
         unitMeasSignal = super().get(query)
-        if "V" in unitMeasSignal or "mA" in unitMeasSignal:
-            unitMeasSignal = unitMeasSignal.split("_")[3]
-            unitMeasSignal = unitMeasSignal[-self.countNumberLetters(unitMeasSignal):]
-        elif "_" in unitMeasSignal:
-            unitMeasSignal = unitMeasSignal.split("_")[1]
-            unitMeasSignal = unitMeasSignal[-self.countNumberLetters(unitMeasSignal):]
+        if unitMeasSignal is None:
+            unitMeasSignal = ""
+        else:
+            if "V" in unitMeasSignal or "mA" in unitMeasSignal:
+                unitMeasSignal = unitMeasSignal.split("_")[3]
+                unitMeasSignal = unitMeasSignal[-self.countNumberLetters(unitMeasSignal):]
+            elif "_" in unitMeasSignal:
+                unitMeasSignal = unitMeasSignal.split("_")[1]
+                unitMeasSignal = unitMeasSignal[-self.countNumberLetters(unitMeasSignal):]
         return unitMeasSignal
 
     def countNumberLetters(self, string):
