@@ -150,7 +150,9 @@ class PE(Database):
                      unitMeasSignal, type):
         global sensorType
         cursor = self.connectWithDatabase()
-        query = "INSERT INTO Baza_czujniki (nr_zd, k_modelu, n_seryjny, prod, okres_k, kolejna_k, status, syg_ana_min, syg_ana_max, jednostka_ana, syg_mierz_min, syg_mierz_max, jednostka_mierz, typ_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
+        query = "INSERT INTO Baza_czujniki (nr_zd, k_modelu, n_seryjny, prod, okres_k, kolejna_k, status," \
+                " syg_ana_min, syg_ana_max, jednostka_ana, syg_mierz_min, syg_mierz_max, jednostka_mierz, typ_id)" \
+                " VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
         cursor.execute(query, (
         self.inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate, status,
         minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal, unitMeasSignal,
@@ -320,6 +322,6 @@ class MP2(Database):
     def countNumberLetters(self, string):
         count = 0
         for char in string:
-            if char.isalpha():
+            if char.isalpha() or char == " ":
                 count = count + 1
         return count
