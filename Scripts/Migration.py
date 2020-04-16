@@ -102,7 +102,6 @@ class Application(tk.Frame):
                         mp2.getUnitMeasSignal(), mp2.getType())
 
 
-
 window = tk.Tk()
 app = Application(master=window)
 app.mainloop()
