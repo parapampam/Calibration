@@ -18,7 +18,8 @@ sensorType = {
     "Komora klimatyczna": {"MP2": "Komora klimatyczna", "PE": 28},
     "Komora temperaturowa": {"MP2": "Komora temperaturowa", "PE": 36},
     "Komora szokowa": {"MP2": "Komora szokowa", "PE": 37},
-    "Komora solna": {"MP2": "Komora solna", "PE": 40}
+    "Komora solna": {"MP2": "Komora solna", "PE": 40},
+    "Czujnik przyspieszenia": {"MP2": "Czujnik przyspieszenia", "PE": 20}
 }
 
 
