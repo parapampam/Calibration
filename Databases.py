@@ -2,325 +2,470 @@ import pyodbc
 import datetime
 from calendar import monthrange
 
-sensorType = {
-    "Czujnik drogi": {"MP2": "Czujnik drogi", "PE": 3},
-    "Suwmiarka": {"MP2": "Suwmiarka", "PE": 4},
-    "Czujnik cisnienia": {"MP2": "Czujnik ciśnienia", "PE": 5},
-    "Przeplywomierz": {"MP2": "Przepływomierz", "PE": 6},
-    "Czujnik sily": {"MP2": "Czujnik siły", "PE": 7},
-    "Waga": {"MP2": "Waga", "PE": 10},
-    "Zestaw pomiarowy": {"MP2": "Zestaw pomiarowy", "PE": 11},
-    "Klucz dynamometryczny": {"MP2": "Klucz dynamometryczny", "PE": 12},
-    "Glebokosciomierz": {"MP2": "Głębokościomierz", "PE": 14},
-    "Mikrometr": {"MP2": "Mikrometr", "PE": 16},
-    "Wysokosciomierz": {"MP2": "Wysokościomierz", "PE": 19},
-    "Piecyk": {"MP2": "Piecyk", "PE": 25},
-    "Komora klimatyczna": {"MP2": "Komora klimatyczna", "PE": 28},
-    "Komora temperaturowa": {"MP2": "Komora temperaturowa", "PE": 36},
-    "Komora szokowa": {"MP2": "Komora szokowa", "PE": 37},
-    "Komora solna": {"MP2": "Komora solna", "PE": 40},
-    "Czujnik przyspieszenia": {"MP2": "Czujnik przyspieszenia", "PE": 20}
-}
+
+def _count_number_of_letters(text):
+    result = 0
+    for char in text:
+        if char.isalpha():
+            result += 1
+    return result
 
 
 class Database:
-    def __init__(self, inventoryNumber=""):
-        self.inventoryNumber = inventoryNumber
+    def __init__(self, name):
+        self._conn = pyodbc.connect(name)
+        self._cursor = self._conn.cursor()
 
-    def connectWithDatabase(self):
-        pass
+    def __enter__(self):
+        return self
 
-    def get(self, query=""):
-        cursor = self.connectWithDatabase()
-        cursor.execute(query)
-        return cursor.fetchone()[0]
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        self.close()
 
-    def getKey(self, type):
-        global sensorType
-        for key in sensorType.keys():
-            for search, value in sensorType[key].items():
-                if type == value:
-                    return key
-                else:
-                    pass
+    @property
+    def connection(self):
+        return self._conn
+
+    @property
+    def cursor(self):
+        return self._cursor
+
+    def commit(self):
+        self.connection.commit()
+
+    def close(self, commit=True):
+        if commit:
+            self.commit()
+        self.connection.close()
+
+    def execute(self, sql, params=None):
+        self.cursor.execute(sql, params or ())
+
+    def fetchall(self):
+        return self.cursor.fetchall()
+
+    def fetchone(self):
+        return self.cursor.fetchone()
+
+    def query(self, sql, params=None):
+        self.cursor.execute(sql, params or ())
+        return self.fetchall()
 
 
 class PE(Database):
-    def connectWithDatabase(self):
-        connect = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server};'
-                                 'Server=WPLSXSQL1;'
-                                 'Database=sensmandb;'
-                                 'uid=admuser;pwd=admu$er;'
-                                 )
-        return connect.cursor()
+    def __init__(self):
+        dbc = 'Driver={ODBC Driver 17 for SQL Server};' \
+              'Server=WPLSXSQL1;' \
+              'Database=sensmandb;' \
+              'uid=admuser;pwd=admu$er;'
+        super().__init__(dbc)
 
-    def measurementInstrumentInDatabase(self):
-        try:
-            if self.getInventoryNumber():
-                exist = True
+    def if_exist(self, inventory_number):
+        sql = "SELECT COUNT(1) FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_type(self, inventory_number):
+        sql = "SELECT typ_id FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_type_name(self, inventory_number):
+        sql = "SELECT Btc.lo FROM Baza_typ_czujnika AS Btc JOIN Baza_czujniki AS Bc ON Bc.typ_id = Btc.id AND " \
+              "Bc.nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_procucent(self, inventory_number):
+        sql = "SELECT prod FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_model(self, inventory_number):
+        sql = "SELECT k_modelu FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_serial_number(self, inventory_number):
+        sql = "SELECT n_seryjny FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_calibration_period(self, inventory_number):
+        sql = "SELECT okres_k FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_calibration_date(self, inventory_number):
+        sql = "SELECT kolejna_k FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_status(self, inventory_number):
+        sql = "SELECT status FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_min_analog_signal(self, inventory_number):
+        sql = "SELECT syg_ana_min FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        min_analog_signal = super().query(sql)[0][0]
+        if min_analog_signal is not None and min_analog_signal % 1 == 0:
+            return int(min_analog_signal)
+        else:
+            return min_analog_signal
+
+    def get_max_analog_signal(self, inventory_number):
+        sql = "SELECT syg_ana_max FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        max_analog_signal = super().query(sql)[0][0]
+        if max_analog_signal is not None and max_analog_signal % 1 == 0:
+            return int(max_analog_signal)
+        else:
+            return max_analog_signal
+
+    def get_unit_analog_signal(self, inventory_number):
+        sql = "SELECT jednostka_ana FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_min_meas_signal(self, inventory_number):
+        sql = "SELECT syg_mierz_min FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        min_meas_signal = super().query(sql)[0][0]
+        if min_meas_signal is not None and min_meas_signal % 1 == 0:
+            return int(min_meas_signal)
+        else:
+            return min_meas_signal
+
+    def get_max_meas_signal(self, inventory_number):
+        sql = "SELECT syg_mierz_max FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        max_meas_signal = super().query(sql)[0][0]
+        if max_meas_signal is not None and max_meas_signal % 1 == 0:
+            return int(max_meas_signal)
+        else:
+            return max_meas_signal
+
+    def get_unit_meas_signal(self, inventory_number):
+        sql = "SELECT jednostka_mierz FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def add_new_measurement_instrument(self, inventory_number, model, serial_number, producent, calibration_period, calibration_date,
+                     status, min_analog_signal, max_analog_signal, unit_analog_signal, min_meas_signal, max_meas_signal,
+                     unit_meas_signal, type):
+        sql = "INSERT INTO Baza_czujniki (nr_zd, k_modelu, n_seryjny, prod, okres_k, kolejna_k, status, syg_ana_min," \
+              " syg_ana_max, jednostka_ana, syg_mierz_min, syg_mierz_max, jednostka_mierz, typ_id) " \
+              "VALUES ('{}', '{}', '{}', '{}', {}, '{}', '{}', {}, {}, '{}', {}, {}, '{}', {})" \
+            .format(inventory_number, model, serial_number, producent, calibration_period, calibration_date, status,
+                    min_analog_signal, max_analog_signal, unit_analog_signal, min_meas_signal, max_meas_signal,
+                    unit_meas_signal, type)
+        super().execute(sql)
+
+    def get_responsible_employee(self, inventory_number):
+        if self.get_status(inventory_number) == "wp":
+            sql = "SELECT akt_wyp_id FROM Baza_czujniki WHERE nr_zd = N'{}'".format(inventory_number)
+            hire_id = super().query(sql)[0][0]
+            if hire_id is None:
+                return "-"
             else:
-                exist = False
-        except TypeError:
-            exist = False
-        return exist
-
-    def getInventoryNumber(self):
-        query = "SELECT nr_zd FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getType(self):
-        query = "SELECT Btc.lo FROM Baza_typ_czujnika AS Btc JOIN Baza_czujniki AS Bc ON Bc.typ_id = Btc.id AND Bc.nr_zd = '" \
-                + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getModel(self):
-        query = "SELECT k_modelu FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getSerialNumber(self):
-        query = "SELECT n_seryjny FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getProducent(self):
-        query = "SELECT prod FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getCalibrationPeriod(self):
-        query = "SELECT okres_k FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getCalibrationDate(self):
-        query = "SELECT kolejna_k FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getStatus(self):
-        status = {
-            "wk": "kalibracja wewnętrzna",
-            "zk": "kalibracja zewnętrzna",
-            "wp": "wypożyczony",
-            "ns": "wolny",
-            "wn": "naprawa",
-            "od": "do odbioru",
-            "nn": "do ustawienia"
-        }
-        query = "SELECT status FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        return status[super().get(query)]
-
-    def getMinAnalogSignal(self):
-        query = "SELECT syg_ana_min FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        minAnalogSignal = super().get(query)
-        if minAnalogSignal % 1 == 0:
-            return int(minAnalogSignal)
+                sql = "SELECT id_pracownika_id FROM Baza_wypozyczenia WHERE id = N'{}'".format(hire_id)
+                employee_id = super().query(sql)[0][0]
+                if employee_id == -1:
+                    return "-"
+                else:
+                    sql = "SELECT first_name FROM auth_user WHERE id = N'{}'".format(employee_id)
+                    first_name = super().query(sql)[0][0]
+                    sql = "SELECT last_name FROM auth_user WHERE id = N'{}'".format(employee_id)
+                    last_name = super().query(sql)[0][0]
+                    return first_name + " " + last_name
         else:
-            return minAnalogSignal
+            return "-"
 
-    def getMaxAnalogSignal(self):
-        query = "SELECT syg_ana_max FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        maxAnalogSignal = super().get(query)
-        if maxAnalogSignal % 1 == 0:
-            return int(maxAnalogSignal)
+    def get_range(self, inventory_number):
+        min_analog_signal = self.get_min_analog_signal(inventory_number)
+        max_analog_signal = self.get_max_analog_signal(inventory_number)
+        unit_analog_signal = self.get_unit_analog_signal(inventory_number)
+        min_meas_signal = self.get_min_meas_signal(inventory_number)
+        max_meas_signal = self.get_max_meas_signal(inventory_number)
+        unit_meas_signal = self.get_unit_meas_signal(inventory_number)
+        type_name = self.get_type_name(inventory_number)
+        if "Komora" in type_name:
+            return unit_meas_signal
+        elif min_analog_signal is None and max_analog_signal is None and unit_analog_signal == "" and min_meas_signal is \
+                None and max_meas_signal is None and unit_meas_signal == "":
+            return "-"
+        elif unit_meas_signal is not None and ("CL" or "CR" or "TS" or "TE") in unit_meas_signal:
+            return unit_meas_signal
+        elif min_analog_signal is None and max_analog_signal is None and unit_analog_signal == "":
+            return str(min_meas_signal) + "_" + str(max_meas_signal) + unit_meas_signal
+        elif (min_analog_signal and max_analog_signal and unit_analog_signal and min_meas_signal and max_meas_signal
+              and unit_meas_signal) is None:
+            return "-"
         else:
-            return maxAnalogSignal
+            return str(min_analog_signal) + "_" + str(max_analog_signal) + unit_analog_signal + "_" + \
+                   str(min_meas_signal) + "_" + str(max_meas_signal) + unit_meas_signal
 
-    def getUnitAnalogSignal(self):
-        query = "SELECT jednostka_ana FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getMinMeasSignal(self):
-        query = "SELECT syg_mierz_min FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        minMeasSignal = super().get(query)
-        if minMeasSignal % 1 == 0:
-            return int(minMeasSignal)
-        else:
-            return minMeasSignal
-
-    def getMaxMeasSignal(self):
-        query = "SELECT syg_mierz_max FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        maxMeasSignal = super().get(query)
-        if maxMeasSignal % 1 == 0:
-            return int(maxMeasSignal)
-        else:
-            return maxMeasSignal
-
-    def getUnitMeasSignal(self):
-        query = "SELECT jednostka_mierz FROM Baza_czujniki WHERE nr_zd = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def addNewSensor(self, model, serialNumber, producent, calibrationPeriod, calibrationDate,
-                     status, minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal,
-                     unitMeasSignal, type):
-        global sensorType
-        cursor = self.connectWithDatabase()
-        query = "INSERT INTO Baza_czujniki (nr_zd, k_modelu, n_seryjny, prod, okres_k, kolejna_k, status, syg_ana_min, syg_ana_max, jednostka_ana, syg_mierz_min, syg_mierz_max, jednostka_mierz, typ_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)"
-        cursor.execute(query, (
-        self.inventoryNumber, model, serialNumber, producent, calibrationPeriod, calibrationDate, status,
-        minAnalogSignal, maxAnalogSignal, unitAnalogSignal, minMeasSignal, maxMeasSignal, unitMeasSignal,
-        sensorType[super().getKey(type)]["PE"]))
-        cursor.commit()
 
 
 class MP2(Database):
+    def __init__(self):
+        dbc = 'Driver={ODBC Driver 17 for SQL Server};' \
+              'Server=wplsxsql1;' \
+              'Database=MP2_PRO;' \
+              'uid=MP2_Read;pwd=Read_MP2;'
+        super().__init__(dbc)
 
-    def connectWithDatabase(self):
-        connect = pyodbc.connect('Driver={ODBC Driver 17 for SQL Server};'
-                                 'Server=wplsxsql1;'
-                                 'Database=MP2_PRO;'
-                                 'uid=MP2_Read;pwd=Read_MP2;'
-                                 )
-        return connect.cursor()
+    def if_exist(self, inventory_number):
+        sql = "SELECT COUNT(1) FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
 
-    def getLastMeasurementInstrumentInDatabase(self):
-        query = "SELECT EQUIP.EQNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE EQUIP.EQNUM LIKE 'LP[_]%' ORDER BY EQUIP.EQNUM DESC"
-        cursor = self.connectWithDatabase()
-        cursor.execute(query)
-        return cursor.fetchone()[0]
+    def get_last_leasurement_instrument(self):
+        sql = "SELECT EQUIP.EQNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE EQUIP.EQNUM LIKE 'LP[_]%' ORDER BY EQUIP.EQNUM DESC"
+        return super().query(sql)[0][0]
 
-    def measurementInstrumentInDatabase(self):
-        try:
-            if self.getInventoryNumber():
-                exist = True
+    def get_object_code(self, inventory_number):
+        sql = "SELECT EQUIP.EQNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_type(self, inventory_number):
+        sql = "SELECT EQUIP.DESCRIPTION FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_model(self, inventory_number):
+        sql = "SELECT EQUIP.MODELNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_serial_number(self, inventory_number):
+        sql = "SELECT EQUIP.SERIALNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_producent(self, inventory_number):
+        sql = "SELECT EQUIP.MANUFACTURER FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def get_calibration_period(self, inventory_number):
+        sql = "SELECT EQUIP.UD7 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        return super().query(sql)[0][0].split(" ")[0]
+
+    def get_calibration_date(self, inventory_number):
+        sql = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        calibration_date = super().query(sql)[0][0]
+        if ("w kalibracji" or "archiwum") in calibration_date:
+            calibration_date = datetime.date.today()
+        else:
+            calibration_date = datetime.date(int(calibration_date[3:]), int(calibration_date[:2]),
+                                             monthrange(int(calibration_date[3:]), int(calibration_date[:2]))[1])
+        return calibration_date
+
+    # def getStatus(self):
+    #     query = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(self.inventory_number)
+    #     status = super().get(query)
+    #     if "w kalibracji" in status:
+    #         status = "wk"
+    #     elif "archiwum" in status:
+    #         status = "ar"
+    #     elif datetime.date(int(status[3:]), int(status[:2]),
+    #                        monthrange(int(status[3:]), int(status[:2]))[1]) > datetime.date.today():
+    #         status = "nn"
+    #     else:
+    #         status = "nn"
+    #     return status
+
+    def get_min_analog_signal(self, inventory_number):
+        sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        min_analog_signal = super().query(sql)[0][0]
+        if min_analog_signal is None:
+            pass
+        else:
+            if ("V" or "mA") in min_analog_signal:
+                min_analog_signal = min_analog_signal.split("_")[0]
             else:
-                exist = False
-        except TypeError:
-            exist = False
-        return exist
+                min_analog_signal = None
+        return min_analog_signal
 
-    def getInventoryNumber(self):
-        query = "SELECT EQUIP.UD4 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getType(self):
-        global sensorType
-        query = "SELECT EQUIP.DESCRIPTION FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        return sensorType[super().get(query)]["MP2"]
-
-    def getModel(self):
-        query = "SELECT EQUIP.MODELNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getSerialNumber(self):
-        query = "SELECT EQUIP.SERIALNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getProducent(self):
-        query = "SELECT EQUIP.MANUFACTURER FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        return super().get(query)
-
-    def getCalibrationPeriod(self):
-        query = "SELECT EQUIP.UD7 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        return super().get(query).split(" ")[0]
-
-    def getCalibrationDate(self):
-        query = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        calibrationDate = super().get(query)
-        if "w kalibracji" in calibrationDate:
-            calibrationDate = datetime.date.today()
-        elif "archiwum" in calibrationDate:
-            calibrationDate = datetime.date.today()
+    def get_max_analog_signal(self, inventory_number):
+        sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        max_analog_signal = super().query(sql)[0][0]
+        if max_analog_signal is None:
+            pass
         else:
-            calibrationDate = datetime.date(int(calibrationDate[3:]), int(calibrationDate[:2]),
-                                            monthrange(int(calibrationDate[3:]), int(calibrationDate[:2]))[1])
-        return calibrationDate
-
-    def getStatus(self):
-        query = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        status = super().get(query)
-        if "w kalibracji" in status:
-            status = "w kalibracji"
-        elif "archiwum" in status:
-            status = "w archiwum"
-        elif datetime.date(int(status[3:]), int(status[:2]),
-                           monthrange(int(status[3:]), int(status[:2]))[1]) > datetime.date.today():
-            status = "aktualna kalibracja"
-        else:
-            status = "przeterminowana kalibracja"
-        return status
-
-    def getMinAnalogSignal(self):
-        query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        minAnalogSignal = super().get(query)
-        if minAnalogSignal is None:
-            minAnalogSignal = ""
-        else:
-            if "V" in minAnalogSignal or "mA" in minAnalogSignal:
-                minAnalogSignal = minAnalogSignal.split("_")[0]
+            if ("V" or "mA") in max_analog_signal:
+                max_analog_signal = max_analog_signal.split("_")[1]
+                max_analog_signal = max_analog_signal[:(len(max_analog_signal)
+                                                        - _count_number_of_letters(max_analog_signal))]
             else:
-                minAnalogSignal = ""
-        return minAnalogSignal
+                max_analog_signal = None
+        return max_analog_signal
 
-    def getMaxAnalogSignal(self):
-        query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        maxAnalogSignal = super().get(query)
-        if maxAnalogSignal is None:
-            maxAnalogSignal = ""
+    def get_unit_analog_signal(self, inventory_number):
+        sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        unit_analog_signal = super().query(sql)[0][0]
+        if unit_analog_signal is None:
+            pass
         else:
-            if "V" in maxAnalogSignal or "mA" in maxAnalogSignal:
-                maxAnalogSignal = maxAnalogSignal.split("_")[1]
-                maxAnalogSignal = maxAnalogSignal[:(len(maxAnalogSignal) - self.countNumberLetters(maxAnalogSignal))]
+            if ("V" or "mA") in unit_analog_signal:
+                unit_analog_signal = unit_analog_signal.split("_")[1]
+                unit_analog_signal = unit_analog_signal[-_count_number_of_letters(unit_analog_signal):]
             else:
-                maxAnalogSignal = ""
-        return maxAnalogSignal
+                unit_analog_signal = None
+        return unit_analog_signal
 
-    def getUnitAnalogSignal(self):
-        query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        unitAnalogSignal = super().get(query)
-        if unitAnalogSignal is None:
-            unitAnalogSignal = ""
+    def get_min_meas_signal(self, inventory_number):
+        sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        min_meas_signal = super().query(sql)[0][0]
+        if min_meas_signal is None:
+            pass
         else:
-            if "V" in unitAnalogSignal or "mA" in unitAnalogSignal:
-                unitAnalogSignal = unitAnalogSignal.split("_")[1]
-                unitAnalogSignal = unitAnalogSignal[-self.countNumberLetters(unitAnalogSignal):]
+            if ("V" or "mA") in min_meas_signal:
+                min_meas_signal = min_meas_signal.split("_")[2]
+            elif "_" in min_meas_signal:
+                min_meas_signal = min_meas_signal.split("_")[0]
             else:
-                unitAnalogSignal = ""
-        return unitAnalogSignal
+                min_meas_signal = None
+        return min_meas_signal
 
-    def getMinMeasSignal(self):
-        query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        minMeasSignal = super().get(query)
-        if minMeasSignal is None:
-            minMeasSignal = ""
+    def get_max_meas_signal(self, inventory_number):
+        sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        max_meas_signal = super().query(sql)[0][0]
+        if max_meas_signal is None:
+            pass
         else:
-            if "V" in minMeasSignal or "mA" in minMeasSignal:
-                minMeasSignal = minMeasSignal.split("_")[2]
-            elif "_" in minMeasSignal:
-                minMeasSignal = minMeasSignal.split("_")[0]
+            if ("V" or "mA") in max_meas_signal:
+                max_meas_signal = max_meas_signal.split("_")[3]
+                max_meas_signal = max_meas_signal[:len(max_meas_signal) - _count_number_of_letters(max_meas_signal)]
+            elif "_" in max_meas_signal:
+                max_meas_signal = max_meas_signal.split("_")[1]
+                max_meas_signal = max_meas_signal[:len(max_meas_signal) - _count_number_of_letters(max_meas_signal)]
             else:
-                minMeasSignal = ""
-        return minMeasSignal
+                max_meas_signal = None
+        return max_meas_signal
 
-    def getMaxMeasSignal(self):
-        query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        maxMeasSignal = super().get(query)
-        if maxMeasSignal is None:
-            maxMeasSignal = ""
+    def get_unit_meas_signal(self, inventory_number):
+        sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        unit_meas_signal = super().query(sql)[0][0]
+        if unit_meas_signal is None:
+            pass
         else:
-            if "V" in maxMeasSignal or "mA" in maxMeasSignal:
-                maxMeasSignal = maxMeasSignal.split("_")[3]
-                maxMeasSignal = maxMeasSignal[:len(maxMeasSignal) - self.countNumberLetters(maxMeasSignal)]
-            elif "_" in maxMeasSignal:
-                maxMeasSignal = maxMeasSignal.split("_")[1]
-                maxMeasSignal = maxMeasSignal[:len(maxMeasSignal) - self.countNumberLetters(maxMeasSignal)]
-            else:
-                maxMeasSignal = ""
-        return maxMeasSignal
+            if ("V" or "mA") in unit_meas_signal:
+                unit_meas_signal = unit_meas_signal.split("_")[3]
+                unit_meas_signal = unit_meas_signal[-_count_number_of_letters(unit_meas_signal):]
+            elif "_" in unit_meas_signal:
+                unit_meas_signal = unit_meas_signal.split("_")[1]
+                unit_meas_signal = unit_meas_signal[-_count_number_of_letters(unit_meas_signal):]
+        return unit_meas_signal
 
-    def getUnitMeasSignal(self):
-        query = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '" + self.inventoryNumber + "'"
-        unitMeasSignal = super().get(query)
-        if unitMeasSignal is None:
-            unitMeasSignal = ""
+    def get_team(self, inventory_number):
+        sql = "SELECT EQUIP.SUBLOCATION1 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        return super().query(sql)[0][0]
+
+    def _get_calibration_years(self):
+        sql = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE EQUIP.LOCATION ='VS_PDP'"
+        calibration_dates = super().query(sql)
+        calibration_years = []
+        for calibration_date in calibration_dates:
+            if calibration_date[0] is not None and len(calibration_date[0].split(".")[0]) == 2\
+                    and len(calibration_date[0].split(".")[1]) == 4:
+                if datetime.date.today().year >= int(calibration_date[0].split(".")[1]):
+                    calibration_years.append(int(calibration_date[0].split(".")[1]))
+        return sorted(list(set(calibration_years)))
+
+
+    def _prepare_overdue_calibration_dates(self):
+        overdue_dates_calibration = []
+        for year in self._get_calibration_years():
+            for month in range(1, 13):
+                if month >= datetime.date.today().month and year == datetime.date.today().year:
+                    pass
+                else:
+                    if month in range(0, 10):
+                        overdue_dates_calibration.append("0" + str(month) + "." + str(year))
+                    else:
+                        overdue_dates_calibration.append(str(month) + "." + str(year))
+        return overdue_dates_calibration
+
+    # Przygotowanie numerów inwentarzowych z przeterminowaną datą kalibracji
+    def get_inventory_number_overdue_measurement_instruments(self):
+        overdue_measurement_instruments = []
+        for dates in self._prepare_overdue_calibration_dates():
+            sql = "SELECT EQUIP.UD4 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE EQUIP.LOCATION ='VS_PDP' AND EQUIP.UD9 ='{}'"\
+                .format(dates)
+            measurement_instruments = super().query(sql)
+            for measurement_instrument in measurement_instruments:
+                overdue_measurement_instruments.append(measurement_instrument[0])
+        return overdue_measurement_instruments
+
+    # przygotowanie daty do warunku z aktualnymi kalibracjami
+    def _prepare_current_calibration_date(self):
+        if datetime.date.today().month in range(0, 10):
+            current_date_calibration = "0" + str(datetime.date.today().month) + "." + str(datetime.date.today().year)
         else:
-            if "V" in unitMeasSignal or "mA" in unitMeasSignal:
-                unitMeasSignal = unitMeasSignal.split("_")[3]
-                unitMeasSignal = unitMeasSignal[-self.countNumberLetters(unitMeasSignal):]
-            elif "_" in unitMeasSignal:
-                unitMeasSignal = unitMeasSignal.split("_")[1]
-                unitMeasSignal = unitMeasSignal[-self.countNumberLetters(unitMeasSignal):]
-        return unitMeasSignal
+            current_date_calibration = str(datetime.date.today().month) + "." + str(datetime.date.today().year)
+        return current_date_calibration
 
-    def countNumberLetters(self, string):
-        count = 0
-        for char in string:
-            if char.isalpha():
-                count = count + 1
-        return count
+    # przygotowanie numerów inwentarzowych z przyrządami do kalibracji w tym miesiącu
+    def get_inventory_number_current_measurement_instruments(self):
+        current_measurement_instruments = []
+        sql = "SELECT EQUIP.UD4 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE EQUIP.LOCATION ='VS_PDP' AND EQUIP.UD9 ='{}'"\
+            .format(self._prepare_current_calibration_date())
+        measurement_instruments = super().query(sql)
+        for measurement_instrument in measurement_instruments:
+            current_measurement_instruments.append(measurement_instrument[0])
+        return current_measurement_instruments
+
+    def _prepare_next_calibration_date(self):
+        current_month = datetime.date.today().replace(day=monthrange(datetime.date.today().year,
+                                                                     datetime.date.today().month)[1])
+        next_month = current_month + datetime.timedelta(days=1)
+        if next_month.month in range(0, 10):
+            next_date_calibration = "0" + str(next_month.month) + "." + str(next_month.year)
+        else:
+            next_date_calibration = str(next_month.month) + "." + str(next_month.year)
+        return next_date_calibration
+
+    # # przygotowanie numerów inwentarzowych z przyrządmi do kalibracji w przyszłym miesiącu
+    def get_inventory_number_next_measurement_instruments(self):
+        next_measurement_instruments = []
+        sql = "SELECT EQUIP.UD4 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE EQUIP.LOCATION ='VS_PDP' AND EQUIP.UD9 ='{}'"\
+            .format(self._prepare_next_calibration_date())
+        measurement_instruments = super().query(sql)
+        for measurement_instrument in measurement_instruments:
+            next_measurement_instruments.append(measurement_instrument[0])
+        return next_measurement_instruments
+
+
+
+#
+inventory_number = "ZD3331"
+#
+with PE() as pe:
+     if pe.if_exist(inventory_number):
+         pass
+#         print("istnieje")
+#         print(pe.getType(inventory_number))
+#         print(pe.getModel(inventory_number))
+#         print(pe.getSerialNumber(inventory_number))
+#         print(pe.getCalibrationPeriod(inventory_number))
+#         print(pe.getCalibrationDate(inventory_number))
+#         print(pe.getStatus(inventory_number))
+#         print(pe.getMinAnalogSignal(inventory_number))
+#         print(pe.getMaxAnalogSignal(inventory_number))
+#         print(pe.getUnitAnalogSignal(inventory_number))
+#         print(pe.getMinMeasSignal(inventory_number))
+#         print(pe.getMaxMeasSignal(inventory_number))
+#         print(pe.getUnitMeasSignal(inventory_number))
+#         print(pe.getResponsibleEmployee(inventory_number))
+#         print(pe.getRange(inventory_number))
+#
+#     if not pe.ifExist("test1"):
+#         pass
+#
+# print(""
+#       ""
+#       "")
+#
+# with MP2() as mp2:
+#     if mp2.ifExist(inventory_number):
+#         # print(mp2.getLastMeasurementInstrument())
+#         print(mp2.getObjectCode(inventory_number))
+#         print(mp2.getType(inventory_number))
+#         print(mp2.getModel(inventory_number))
+#         print(mp2.getSerialNumber(inventory_number))
+#         print(mp2.getProducent(inventory_number))
+#         print(mp2.getCalibrationPeriod(inventory_number))
+#         print(mp2.getCalibrationDate(inventory_number))
+#         print(mp2.getMinAnalogSignal(inventory_number))
+#         print(mp2.getMaxAnalogSignal(inventory_number))
+#         print(mp2.getUnitAnalogSignal(inventory_number))
+#         print(mp2.getMinMeasSignal(inventory_number))
+#         print(mp2.getMaxMeasSignal(inventory_number))
+#         print(mp2.getUnitMeasSignal(inventory_number))
+#         print(mp2.getTeam(inventory_number))
+#         print(mp2.getLowestYear())
+#
