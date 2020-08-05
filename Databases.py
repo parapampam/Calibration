@@ -73,6 +73,10 @@ class PE(Database):
               "Bc.nr_zd = '{}'".format(inventory_number)
         return super().query(sql)[0][0]
 
+    def get_type_number(self, type_name):
+        sql = "SELECT id FROM Baza_typ_czujnika WHERE lo = '{}'".format(type_name)
+        return super().query(sql)[0][0]
+
     def get_procucent(self, inventory_number):
         sql = "SELECT prod FROM Baza_czujniki WHERE nr_zd = '{}'".format(inventory_number)
         return super().query(sql)[0][0]
@@ -146,6 +150,7 @@ class PE(Database):
             .format(inventory_number, model, serial_number, producent, calibration_period, calibration_date, status,
                     min_analog_signal, max_analog_signal, unit_analog_signal, min_meas_signal, max_meas_signal,
                     unit_meas_signal, type)
+        print(sql)
         super().execute(sql)
 
     def get_responsible_employee(self, inventory_number):
@@ -261,84 +266,79 @@ class MP2(Database):
         sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
         min_analog_signal = super().query(sql)[0][0]
         if min_analog_signal is None:
-            pass
+            return ""
         else:
             if ("V" or "mA") in min_analog_signal:
-                min_analog_signal = min_analog_signal.split("_")[0]
+                return min_analog_signal.split("_")[0]
             else:
-                min_analog_signal = None
-        return min_analog_signal
+                return ""
 
     def get_max_analog_signal(self, inventory_number):
         sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
         max_analog_signal = super().query(sql)[0][0]
         if max_analog_signal is None:
-            pass
+            return ""
         else:
             if ("V" or "mA") in max_analog_signal:
                 max_analog_signal = max_analog_signal.split("_")[1]
-                max_analog_signal = max_analog_signal[:(len(max_analog_signal)
-                                                        - _count_number_of_letters(max_analog_signal))]
+                return max_analog_signal[:(len(max_analog_signal) - _count_number_of_letters(max_analog_signal))]
             else:
-                max_analog_signal = None
-        return max_analog_signal
+                return ""
 
     def get_unit_analog_signal(self, inventory_number):
         sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
         unit_analog_signal = super().query(sql)[0][0]
         if unit_analog_signal is None:
-            pass
+            return ""
         else:
             if ("V" or "mA") in unit_analog_signal:
                 unit_analog_signal = unit_analog_signal.split("_")[1]
-                unit_analog_signal = unit_analog_signal[-_count_number_of_letters(unit_analog_signal):]
+                return unit_analog_signal[-_count_number_of_letters(unit_analog_signal):]
             else:
-                unit_analog_signal = None
-        return unit_analog_signal
+                return ""
 
     def get_min_meas_signal(self, inventory_number):
         sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
         min_meas_signal = super().query(sql)[0][0]
         if min_meas_signal is None:
-            pass
+            return ""
         else:
             if ("V" or "mA") in min_meas_signal:
-                min_meas_signal = min_meas_signal.split("_")[2]
+                return min_meas_signal.split("_")[2]
             elif "_" in min_meas_signal:
-                min_meas_signal = min_meas_signal.split("_")[0]
+                return min_meas_signal.split("_")[0]
             else:
-                min_meas_signal = None
-        return min_meas_signal
+                return ""
 
     def get_max_meas_signal(self, inventory_number):
         sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
         max_meas_signal = super().query(sql)[0][0]
         if max_meas_signal is None:
-            pass
+            return ""
         else:
             if ("V" or "mA") in max_meas_signal:
                 max_meas_signal = max_meas_signal.split("_")[3]
-                max_meas_signal = max_meas_signal[:len(max_meas_signal) - _count_number_of_letters(max_meas_signal)]
+                return max_meas_signal[:len(max_meas_signal) - _count_number_of_letters(max_meas_signal)]
             elif "_" in max_meas_signal:
                 max_meas_signal = max_meas_signal.split("_")[1]
-                max_meas_signal = max_meas_signal[:len(max_meas_signal) - _count_number_of_letters(max_meas_signal)]
+                return max_meas_signal[:len(max_meas_signal) - _count_number_of_letters(max_meas_signal)]
             else:
-                max_meas_signal = None
-        return max_meas_signal
+                return max_meas_signal
 
     def get_unit_meas_signal(self, inventory_number):
         sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
         unit_meas_signal = super().query(sql)[0][0]
         if unit_meas_signal is None:
-            pass
+            return ""
         else:
             if ("V" or "mA") in unit_meas_signal:
                 unit_meas_signal = unit_meas_signal.split("_")[3]
-                unit_meas_signal = unit_meas_signal[-_count_number_of_letters(unit_meas_signal):]
+                return unit_meas_signal[-_count_number_of_letters(unit_meas_signal):]
             elif "_" in unit_meas_signal:
                 unit_meas_signal = unit_meas_signal.split("_")[1]
-                unit_meas_signal = unit_meas_signal[-_count_number_of_letters(unit_meas_signal):]
-        return unit_meas_signal
+                return unit_meas_signal[-_count_number_of_letters(unit_meas_signal):]
+            else:
+                return ""
 
     def get_team(self, inventory_number):
         sql = "SELECT EQUIP.SUBLOCATION1 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
