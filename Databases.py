@@ -244,19 +244,18 @@ class MP2(Database):
                                              monthrange(int(calibration_date[3:]), int(calibration_date[:2]))[1])
         return calibration_date
 
-    # def getStatus(self):
-    #     query = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(self.inventory_number)
-    #     status = super().get(query)
-    #     if "w kalibracji" in status:
-    #         status = "wk"
-    #     elif "archiwum" in status:
-    #         status = "ar"
-    #     elif datetime.date(int(status[3:]), int(status[:2]),
-    #                        monthrange(int(status[3:]), int(status[:2]))[1]) > datetime.date.today():
-    #         status = "nn"
-    #     else:
-    #         status = "nn"
-    #     return status
+    def get_status(self, inventory_number):
+        sql = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
+        status = super().query(sql)[0][0]
+        if status == "w kalibracji":
+            return "wk"
+        elif status == "archiwum":
+            return "ar"
+        elif datetime.date(int(status[3:]), int(status[:2]),
+                           monthrange(int(status[3:]), int(status[:2]))[1]) > datetime.date.today():
+            return "nn"
+        else:
+            return "nn"
 
     def get_min_analog_signal(self, inventory_number):
         sql = "SELECT EQUIP.UD10 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
