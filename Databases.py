@@ -237,7 +237,7 @@ class MP2(Database):
     def get_calibration_date(self, inventory_number):
         sql = "SELECT EQUIP.UD9 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
         calibration_date = super().query(sql)[0][0]
-        if ("w kalibracji" or "archiwum") in calibration_date:
+        if calibration_date in ["w kalibracji", "archiwum"]:
             calibration_date = datetime.date.today()
         else:
             calibration_date = datetime.date(int(calibration_date[3:]), int(calibration_date[:2]),
