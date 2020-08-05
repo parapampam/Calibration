@@ -206,7 +206,7 @@ class MP2(Database):
         sql = "SELECT COUNT(1) FROM MP2_PRO.dbo.EQUIP EQUIP WHERE UD4 = '{}'".format(inventory_number)
         return super().query(sql)[0][0]
 
-    def get_last_leasurement_instrument(self):
+    def get_last_measurement_instrument(self):
         sql = "SELECT EQUIP.EQNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE EQUIP.EQNUM LIKE 'LP[_]%' ORDER BY EQUIP.EQNUM DESC"
         return super().query(sql)[0][0]
 
@@ -419,14 +419,28 @@ class MP2(Database):
             next_measurement_instruments.append(measurement_instrument[0])
         return next_measurement_instruments
 
+    def get_object_code_all_measurement_instruments(self):
+        objects_code = []
+        sql = "SELECT EQUIP.EQNUM FROM MP2_PRO.dbo.EQUIP EQUIP WHERE EQUIP.LOCATION = 'VS_PDP' AND EQUIP.EQNUM LIKE 'LP_%'"
+        for object_code in super().query(sql):
+            objects_code.append(object_code[0])
+        return objects_code
+
+    def get_inventory_number(self, object_code):
+        sql = "SELECT EQUIP.UD4 FROM MP2_PRO.dbo.EQUIP EQUIP WHERE EQUIP.EQNUM = '{}'".format(object_code)
+        inventory_number = super().query(sql)[0][0]
+        if inventory_number is None:
+            return ""
+        else:
+            return inventory_number
 
 
 #
-inventory_number = "ZD3331"
+# inventory_number = "ZD3331"
 #
-with PE() as pe:
-     if pe.if_exist(inventory_number):
-         pass
+# with PE() as pe:
+#      if pe.if_exist(inventory_number):
+#          pass
 #         print("istnieje")
 #         print(pe.getType(inventory_number))
 #         print(pe.getModel(inventory_number))
