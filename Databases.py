@@ -2,14 +2,12 @@ import pyodbc
 import datetime
 from calendar import monthrange
 
-
-def _count_number_of_letters(text):
+def _count_number_of_no_number(text):
     result = 0
     for char in text:
-        if char.isalpha():
+        if not char.isdigit():
             result += 1
     return result
-
 
 class Database:
     def __init__(self, name):
@@ -74,7 +72,8 @@ class PE(Database):
         return super().query(sql)[0][0]
 
     def get_type_number(self, type_name):
-        sql = "SELECT id FROM Baza_typ_czujnika WHERE lo = '{}'".format(type_name)
+        sql = "SELECT id FROM Baza_typ_czujnika WHERE lo = N'{}'".format(type_name)
+        print(sql)
         return super().query(sql)[0][0]
 
     def get_procucent(self, inventory_number):
@@ -152,6 +151,7 @@ class PE(Database):
                     unit_meas_signal, type)
         print(sql)
         super().execute(sql)
+        super().commit()
 
     def get_responsible_employee(self, inventory_number):
         if self.get_status(inventory_number) == "wp":
@@ -254,7 +254,7 @@ class MP2(Database):
         status = super().query(sql)[0][0]
         if status == "w kalibracji":
             return "wk"
-        elif status == "archiwum":
+        elif status in ["archiwum", "w archiwum"]:
             return "ar"
         elif datetime.date(int(status[3:]), int(status[:2]),
                            monthrange(int(status[3:]), int(status[:2]))[1]) > datetime.date.today():
@@ -281,7 +281,7 @@ class MP2(Database):
         else:
             if ("V" or "mA") in max_analog_signal:
                 max_analog_signal = max_analog_signal.split("_")[1]
-                return max_analog_signal[:(len(max_analog_signal) - _count_number_of_letters(max_analog_signal))]
+                return max_analog_signal[:(len(max_analog_signal) - _count_number_of_no_number(max_analog_signal))]
             else:
                 return ""
 
@@ -293,7 +293,7 @@ class MP2(Database):
         else:
             if ("V" or "mA") in unit_analog_signal:
                 unit_analog_signal = unit_analog_signal.split("_")[1]
-                return unit_analog_signal[-_count_number_of_letters(unit_analog_signal):]
+                return unit_analog_signal[-_count_number_of_no_number(unit_analog_signal):]
             else:
                 return ""
 
@@ -318,10 +318,10 @@ class MP2(Database):
         else:
             if ("V" or "mA") in max_meas_signal:
                 max_meas_signal = max_meas_signal.split("_")[3]
-                return max_meas_signal[:len(max_meas_signal) - _count_number_of_letters(max_meas_signal)]
+                return max_meas_signal[:len(max_meas_signal) - _count_number_of_no_number(max_meas_signal)]
             elif "_" in max_meas_signal:
                 max_meas_signal = max_meas_signal.split("_")[1]
-                return max_meas_signal[:len(max_meas_signal) - _count_number_of_letters(max_meas_signal)]
+                return max_meas_signal[:len(max_meas_signal) - _count_number_of_no_number(max_meas_signal)]
             else:
                 return max_meas_signal
 
@@ -333,10 +333,10 @@ class MP2(Database):
         else:
             if ("V" or "mA") in unit_meas_signal:
                 unit_meas_signal = unit_meas_signal.split("_")[3]
-                return unit_meas_signal[-_count_number_of_letters(unit_meas_signal):]
+                return unit_meas_signal[-_count_number_of_no_number(unit_meas_signal):]
             elif "_" in unit_meas_signal:
                 unit_meas_signal = unit_meas_signal.split("_")[1]
-                return unit_meas_signal[-_count_number_of_letters(unit_meas_signal):]
+                return unit_meas_signal[-_count_number_of_no_number(unit_meas_signal):]
             else:
                 return ""
 
