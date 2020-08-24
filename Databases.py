@@ -256,6 +256,8 @@ class MP2(Database):
             return "wk"
         elif status in ["archiwum", "w archiwum"]:
             return "ar"
+        elif status == "do wizualizacji":
+            return "nn"
         elif datetime.date(int(status[3:]), int(status[:2]),
                            monthrange(int(status[3:]), int(status[:2]))[1]) > datetime.date.today():
             return "nn"
